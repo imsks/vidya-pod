@@ -4,8 +4,9 @@ import { getSupabase } from "@/lib/supabase";
 export async function POST(request: Request) {
   try {
     const supabase = getSupabase();
+    
     const body = await request.json();
-    const { role, name, phone, qualification, standard } = body;
+    const { role, name, phone, qualification, standard, image_url } = body;
 
     if (!role || !name || !phone) {
       return NextResponse.json(
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-      result = await supabase.from("students").insert({ name, phone, standard });
+      result = await supabase.from("students").insert({ name, phone, standard, image_url });
     } else {
       if (!qualification) {
         return NextResponse.json(
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
         );
       }
       const table = role === "teacher" ? "teachers" : "proctors";
-      result = await supabase.from(table).insert({ name, phone, qualification });
+      result = await supabase.from(table).insert({ name, phone, qualification, image_url });
     }
 
     if (result.error) {
@@ -47,7 +48,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch(e) {
+    console.error("Error in register route:", e);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

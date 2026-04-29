@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 
 const ADMIN_ID = "sachin";
@@ -133,12 +134,20 @@ export function AdminPage() {
               Vidya Pods Admin
             </span>
           </div>
-          <button
-            onClick={() => setLoggedIn(false)}
-            className="text-sm text-muted-foreground hover:text-foreground transition"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2 text-sm font-semibold hover:shadow-lift transition-all"
+            >
+              + Register User
+            </Link>
+            <button
+              onClick={() => setLoggedIn(false)}
+              className="text-sm text-muted-foreground hover:text-foreground transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
@@ -182,37 +191,43 @@ export function AdminPage() {
           <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
             {activeTab === "teachers" && (
               <DataTable
-                columns={["Name", "Phone", "Qualification", "Registered"]}
+                columns={["Image", "Name", "Phone", "Qualification", "Registered"]}
                 rows={teachers.map((t) => [
+                  t.image_url || "",
                   t.name,
                   t.phone,
                   t.qualification,
                   new Date(t.created_at).toLocaleDateString("en-IN"),
                 ])}
+                imageColumn={0}
                 emptyMsg="No teachers registered yet"
               />
             )}
             {activeTab === "students" && (
               <DataTable
-                columns={["Name", "Phone", "Standard", "Registered"]}
+                columns={["Image", "Name", "Phone", "Standard", "Registered"]}
                 rows={students.map((s) => [
+                  s.image_url || "",
                   s.name,
                   s.phone,
                   `Class ${s.standard}`,
                   new Date(s.created_at).toLocaleDateString("en-IN"),
                 ])}
+                imageColumn={0}
                 emptyMsg="No students registered yet"
               />
             )}
             {activeTab === "proctors" && (
               <DataTable
-                columns={["Name", "Phone", "Qualification", "Registered"]}
+                columns={["Image", "Name", "Phone", "Qualification", "Registered"]}
                 rows={proctors.map((p) => [
+                  p.image_url || "",
                   p.name,
                   p.phone,
                   p.qualification,
                   new Date(p.created_at).toLocaleDateString("en-IN"),
                 ])}
+                imageColumn={0}
                 emptyMsg="No proctors registered yet"
               />
             )}
@@ -250,10 +265,12 @@ function DataTable({
   columns,
   rows,
   emptyMsg,
+  imageColumn,
 }: {
   columns: string[];
   rows: string[][];
   emptyMsg: string;
+  imageColumn?: number;
 }) {
   if (rows.length === 0) {
     return (
@@ -284,7 +301,19 @@ function DataTable({
             >
               {row.map((cell, j) => (
                 <td key={j} className="px-5 py-4">
-                  {columns[j] === "Status" ? (
+                  {imageColumn === j ? (
+                    cell ? (
+                      <img
+                        src={cell}
+                        alt=""
+                        className="w-9 h-9 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                        —
+                      </div>
+                    )
+                  ) : columns[j] === "Status" ? (
                     <span
                       className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                         cell === "SUCCESS"

@@ -5,7 +5,15 @@ import { useState } from "react";
 
 type Role = "teacher" | "student" | "proctor";
 
+const ADMIN_ID = "sachin";
+const ADMIN_PASSWORD = "sachin";
+
 export function RegisterPage() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [loginId, setLoginId] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
   const [role, setRole] = useState<Role | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -15,6 +23,7 @@ export function RegisterPage() {
   const [phone, setPhone] = useState("");
   const [qualification, setQualification] = useState("");
   const [standard, setStandard] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +33,8 @@ export function RegisterPage() {
     try {
       const body =
         role === "student"
-          ? { role, name, phone, standard }
-          : { role, name, phone, qualification };
+          ? { role, name, phone, standard, image_url: imageUrl || undefined }
+          : { role, name, phone, qualification, image_url: imageUrl || undefined };
 
       const res = await fetch("/api/register", {
         method: "POST",
@@ -77,6 +86,7 @@ export function RegisterPage() {
                 setPhone("");
                 setQualification("");
                 setStandard("");
+                setImageUrl("");
               }}
               className="inline-flex items-center gap-2 rounded-full border-2 border-border px-6 py-3 font-semibold hover:border-foreground/40 transition-all"
             >
@@ -236,6 +246,19 @@ export function RegisterPage() {
                 />
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Profile Image URL <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <input
+                type="url"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://example.com/your-photo.jpg"
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+              />
+            </div>
 
             {error && (
               <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm">

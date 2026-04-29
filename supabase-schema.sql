@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS teachers (
   name TEXT NOT NULL,
   phone TEXT NOT NULL,
   qualification TEXT NOT NULL,
+  image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS students (
   name TEXT NOT NULL,
   phone TEXT NOT NULL,
   standard TEXT NOT NULL,
+  image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -25,6 +27,7 @@ CREATE TABLE IF NOT EXISTS proctors (
   name TEXT NOT NULL,
   phone TEXT NOT NULL,
   qualification TEXT NOT NULL,
+  image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -62,3 +65,9 @@ CREATE POLICY "Allow public read" ON sponsor_orders FOR SELECT USING (true);
 
 -- Allow updates on sponsor_orders (for webhook status updates)
 CREATE POLICY "Allow public update" ON sponsor_orders FOR UPDATE USING (true);
+
+-- Add image_url column to existing tables
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE proctors ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE sponsor_orders ADD COLUMN IF NOT EXISTS image_url TEXT;

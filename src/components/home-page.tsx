@@ -97,9 +97,6 @@ function Nav() {
           <a href="#showcase" className="hover:text-foreground transition">
             People
           </a>
-          <Link href="/register" className="hover:text-foreground transition">
-            Register
-          </Link>
           <Link href="/sponsor" className="hover:text-foreground transition">
             Sponsor
           </Link>
