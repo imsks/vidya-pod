@@ -9,16 +9,13 @@ lerna-debug.log*
 
 node_modules
 dist
-dist-ssr
-.output
-.vinxi
-.tanstack/**
-.nitro
+.next
+out
 *.local
 
-# Wrangler / Cloudflare
-.wrangler/
-.dev.vars
+# env
+.env
+.env.local
 
 # Editor directories and files
 .vscode/*
@@ -30,3 +27,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.env
