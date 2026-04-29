@@ -778,6 +778,28 @@ function Footer() {
             >
               hello@vidyapods.org
             </a>
+            <div className="mt-6">
+              <div className="text-xs font-bold uppercase tracking-widest opacity-60">
+                Policies
+              </div>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li>
+                  <Link href="/contact" className="hover:opacity-100 opacity-80">
+                    Contact Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="hover:opacity-100 opacity-80">
+                    Terms &amp; Conditions
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/refunds" className="hover:opacity-100 opacity-80">
+                    Refunds &amp; Cancellations
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm opacity-70">
