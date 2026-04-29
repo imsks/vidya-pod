@@ -23,7 +23,8 @@ function useCashfreeSDK() {
   const launchPayment = useCallback(
     (paymentSessionId: string) => {
       if (!loaded || !(window as any).Cashfree) return;
-      const cashfree = (window as any).Cashfree({ mode: "sandbox" });
+      const mode = process.env.NEXT_PUBLIC_CASHFREE_MODE === "production" ? "production" : "sandbox";
+      const cashfree = (window as any).Cashfree({ mode });
       cashfree.checkout({ paymentSessionId, redirectTarget: "_self" });
     },
     [loaded],
