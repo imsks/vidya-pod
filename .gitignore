@@ -29,3 +29,4 @@ out
 *.sw?
 
 .env
+.env.production
