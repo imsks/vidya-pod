@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { PRICING, type PlanType } from "@/constants/pricing";
 
 function Reveal({
   children,
@@ -577,71 +578,70 @@ function SponsorCTA() {
             <span className="text-gradient">Fuel a generation.</span>
           </h2>
           <p className="mt-6 text-lg md:text-xl opacity-80 max-w-2xl mx-auto">
-            A single pod costs ₹4,000/month — covering a teacher, books, and
+            A single pod costs ₹{PRICING.monthly.total.toLocaleString("en-IN")}/month — covering a teacher, books, and
             4–6 kids. Choose how you&apos;d like to give.
           </p>
         </Reveal>
 
         <div className="mt-14 grid md:grid-cols-2 gap-6 text-left">
-          <Reveal delay={100}>
-            <div className="h-full p-8 rounded-3xl bg-card/10 backdrop-blur-xl border border-white/20 hover:border-white/40 transition-all hover:-translate-y-1">
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-bold uppercase tracking-widest opacity-70">
-                  Monthly
+          {(Object.keys(PRICING) as PlanType[]).map((key, i) => {
+            const plan = PRICING[key];
+            return (
+              <Reveal key={key} delay={(i + 1) * 100}>
+                <div
+                  className={`relative h-full p-8 rounded-3xl transition-all hover:-translate-y-1 ${
+                    plan.featured
+                      ? "bg-gradient-hero border border-white/30 shadow-glow"
+                      : "bg-card/10 backdrop-blur-xl border border-white/20 hover:border-white/40"
+                  }`}
+                >
+                  {plan.featured && (
+                    <div className="absolute -top-3 right-6 bg-foreground text-background text-xs font-bold px-3 py-1 rounded-full">
+                      MOST IMPACT
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`text-xs font-bold uppercase tracking-widest ${!plan.featured ? "opacity-70" : ""}`}
+                    >
+                      {plan.label}
+                    </div>
+                    <div className="text-2xl">{plan.icon}</div>
+                  </div>
+                  <div className="mt-4 text-5xl font-black font-display">
+                    ₹{plan.total.toLocaleString("en-IN")}
+                    <span
+                      className={`text-lg font-normal ${plan.featured ? "opacity-80" : "opacity-70"}`}
+                    >
+                      {plan.suffix}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-3 ${plan.featured ? "opacity-95" : "opacity-80"}`}
+                  >
+                    {plan.tagline}
+                  </p>
+                  <ul
+                    className={`mt-5 space-y-2 text-sm ${!plan.featured ? "opacity-90" : ""}`}
+                  >
+                    {plan.features.map((f) => (
+                      <li key={f}>✓ {f}</li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/sponsor"
+                    className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-6 py-4 font-bold hover:scale-[1.02] transition-transform ${
+                      plan.featured
+                        ? "bg-foreground text-background"
+                        : "bg-white text-foreground"
+                    }`}
+                  >
+                    Sponsor {plan.label} →
+                  </Link>
                 </div>
-                <div className="text-2xl">📅</div>
-              </div>
-              <div className="mt-4 text-5xl font-black font-display">
-                ₹4,000
-                <span className="text-lg font-normal opacity-70">/mo</span>
-              </div>
-              <p className="mt-3 opacity-80">
-                Flexible. Cancel anytime. Perfect for starting small.
-              </p>
-              <ul className="mt-5 space-y-2 text-sm opacity-90">
-                <li>✓ Fund one pod, every month</li>
-                <li>✓ Monthly impact reports</li>
-                <li>✓ Direct thank-you notes from pod</li>
-              </ul>
-              <Link
-                href="/sponsor"
-                className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-white text-foreground px-6 py-4 font-bold hover:scale-[1.02] transition-transform"
-              >
-                Sponsor Monthly →
-              </Link>
-            </div>
-          </Reveal>
-          <Reveal delay={200}>
-            <div className="relative h-full p-8 rounded-3xl bg-gradient-hero border border-white/30 shadow-glow hover:-translate-y-1 transition-all">
-              <div className="absolute -top-3 right-6 bg-foreground text-background text-xs font-bold px-3 py-1 rounded-full">
-                MOST IMPACT
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-bold uppercase tracking-widest">
-                  Yearly
-                </div>
-                <div className="text-2xl">🎓</div>
-              </div>
-              <div className="mt-4 text-5xl font-black font-display">
-                ₹42,000
-                <span className="text-lg font-normal opacity-80">/yr</span>
-              </div>
-              <p className="mt-3 opacity-95">
-                Save ₹6,000. Gift a full academic year.
-              </p>
-              <ul className="mt-5 space-y-2 text-sm">
-                <li>✓ Full year of learning for one pod</li>
-                <li>✓ Named sponsorship (optional)</li>
-                <li>✓ Year-end documentary + visit invite</li>
-              </ul>
-              <Link
-                href="/sponsor"
-                className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-foreground text-background px-6 py-4 font-bold hover:scale-[1.02] transition-transform"
-              >
-                Sponsor Yearly →
-              </Link>
-            </div>
-          </Reveal>
+              </Reveal>
+            );
+          })}
         </div>
         <p className="mt-8 text-sm opacity-70">
           100% of funds flow to pods. We audit quarterly. Transparency is

@@ -1,23 +1,43 @@
 export const PRICING = {
   monthly: {
-    breakdown: [
-      { label: "Teacher Salary", amount: 2000 },
-      { label: "Proctor Fee", amount: 500 },
-      { label: "Stationery", amount: 500 },
-      { label: "Books & Materials", amount: 500 },
-      { label: "Miscellaneous", amount: 500 },
+    label: "Monthly",
+    icon: "📅",
+    suffix: "/mo",
+    tagline: "Flexible. Cancel anytime. Perfect for starting small.",
+    featured: false,
+    savings: null,
+    features: [
+      "Fund one Student, every month",
+      "Monthly impact reports",
+      "Direct thank-you notes from Student",
     ],
-    total: 4000,
+    breakdown: [
+      { label: "Teacher Salary", amount: 250 },
+      { label: "Proctor Fee", amount: 50 },
+      { label: "Stationery", amount: 50 },
+      { label: "Miscellaneous", amount: 50 },
+    ],
+    total: 400,
   },
   yearly: {
-    breakdown: [
-      { label: "Teacher Salary", amount: 24000 },
-      { label: "Proctor Fee", amount: 6000 },
-      { label: "Stationery", amount: 4000 },
-      { label: "Books & Materials", amount: 4000 },
-      { label: "Miscellaneous", amount: 4000 },
+    label: "Yearly",
+    icon: "🎓",
+    suffix: "/yr",
+    tagline: "Save ₹2,400. Gift a full academic year.",
+    featured: true,
+    savings: 2400,
+    features: [
+      "Full year of learning for one Student",
+      "Named sponsorship (optional)",
+      "Year-end documentary + visit invite",
     ],
-    total: 42000,
+    breakdown: [
+      { label: "Teacher Salary", amount: 3000 },
+      { label: "Proctor Fee", amount: 600 },
+      { label: "Stationery", amount: 600 },
+      { label: "Miscellaneous", amount: 600 },
+    ],
+    total: 4800,
   },
 } as const;
 
