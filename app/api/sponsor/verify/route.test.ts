@@ -184,6 +184,28 @@ describe("GET /api/sponsor/verify", () => {
     fetchMock.mockRestore();
   });
 
+  it("does not restamp paid_at once an order is already paid", async () => {
+    const paidAt = new Date("2026-01-01T00:00:00.000Z");
+    SponsorOrder.findOne.mockResolvedValue({
+      ...existingOrder,
+      status: "SUCCESS",
+      paid_at: paidAt,
+    });
+    const fetchMock = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValue(cashfreeResponse("PAID"));
+
+    const { GET } = await import("./route");
+
+    await GET(verifyRequest(`?order_id=${ORDER_ID}`));
+
+    const [, update] = SponsorOrder.findOneAndUpdate.mock.calls[0];
+    expect(update).not.toHaveProperty("paid_at");
+    expect(update.status).toBe("SUCCESS");
+
+    fetchMock.mockRestore();
+  });
+
   it("returns 502 when the Cashfree request fails", async () => {
     const fetchMock = vi
       .spyOn(global, "fetch")
@@ -208,6 +230,15 @@ describe("GET /api/sponsor/verify", () => {
       .spyOn(global, "fetch")
       .mockImplementation(async () => cashfreeResponse("PAID"));
 
+    // Mirror a real database: once the first call writes, the next lookup
+    // sees the persisted record rather than the original PENDING one.
+    let stored: Record<string, unknown> = { ...existingOrder };
+    SponsorOrder.findOne.mockImplementation(async () => stored);
+    SponsorOrder.findOneAndUpdate.mockImplementation(async (_filter, update) => {
+      stored = { ...stored, ...update };
+      return stored;
+    });
+
     const { GET } = await import("./route");
 
     const first = await GET(verifyRequest(`?order_id=${ORDER_ID}`));
@@ -223,6 +254,9 @@ describe("GET /api/sponsor/verify", () => {
     expect(secondFilter).toEqual(firstFilter);
     expect(secondUpdate.status).toBe(firstUpdate.status);
     expect(secondUpdate.cf_order_id).toBe(firstUpdate.cf_order_id);
+    // The first call stamps paid_at; the second must leave it alone.
+    expect(firstUpdate.paid_at).toBeInstanceOf(Date);
+    expect(secondUpdate).not.toHaveProperty("paid_at");
     expect(await second.json()).toEqual(await first.json());
 
     fetchMock.mockRestore();

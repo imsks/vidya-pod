@@ -60,6 +60,8 @@ export async function GET(request: Request) {
           "x-client-id": process.env.CASHFREE_CLIENT_ID!,
           "x-client-secret": process.env.CASHFREE_SECRET_KEY!,
         },
+        // Payment status changes; a cached response could report a stale one.
+        cache: "no-store",
       },
     );
 
@@ -79,12 +81,16 @@ export async function GET(request: Request) {
     // still be able to move to SUCCESS. The write is idempotent because it
     // mirrors Cashfree's authoritative state rather than applying a delta.
     if (status !== "PENDING") {
+      // paid_at is only stamped the first time an order is confirmed paid, so
+      // it keeps meaning "when this was paid" rather than "when we last looked".
+      const stampPaidAt = status === "SUCCESS" && !order.paid_at;
+
       await SponsorOrder.findOneAndUpdate(
         { order_id: orderId },
         {
           status,
           cf_order_id: cashfreeData.cf_order_id,
-          ...(status === "SUCCESS" ? { paid_at: new Date() } : {}),
+          ...(stampPaidAt ? { paid_at: new Date() } : {}),
         },
         { new: true },
       );

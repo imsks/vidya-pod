@@ -88,7 +88,9 @@ export function SponsorPage() {
     if (!orderId) return;
     let cancelled = false;
 
-    fetch(`/api/sponsor/verify?order_id=${encodeURIComponent(orderId)}`)
+    fetch(`/api/sponsor/verify?order_id=${encodeURIComponent(orderId)}`, {
+      cache: "no-store",
+    })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("failed"))))
       .then((data) => {
         if (!cancelled) setVerifyStatus(data.status);
