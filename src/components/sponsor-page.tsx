@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
+import type { User } from "@supabase/supabase-js";
 import { PRICING, type PlanType } from "@/constants/pricing";
 
 function useCashfreeSDK() {
@@ -33,13 +34,14 @@ function useCashfreeSDK() {
   return { loaded, launchPayment };
 }
 
-export function SponsorPage() {
+export function SponsorPage({ user }: { user: User | null }) {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order_id");
 
+  const meta = user?.user_metadata as Record<string, string> | undefined;
   const [plan, setPlan] = useState<PlanType>("monthly");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState(meta?.full_name ?? meta?.name ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
