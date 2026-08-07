@@ -75,8 +75,16 @@ CREATE POLICY "Allow public read" ON students FOR SELECT USING (true);
 CREATE POLICY "Allow public read" ON proctors FOR SELECT USING (true);
 CREATE POLICY "Allow public read" ON sponsor_orders FOR SELECT USING (true);
 
--- Admin users policies (only authenticated users can read admin_users)
-CREATE POLICY "Allow authenticated read" ON admin_users FOR SELECT TO authenticated USING (true);
+-- Admin users policies (authenticated users can only read their own row)
+CREATE POLICY "Allow user to read own admin record" ON admin_users FOR SELECT TO authenticated 
+  USING (user_id = auth.uid());
+CREATE POLICY "Allow super_admin to read all" ON admin_users FOR SELECT TO authenticated 
+  USING (
+    EXISTS (
+      SELECT 1 FROM admin_users 
+      WHERE user_id = auth.uid() AND role = 'super_admin'
+    )
+  );
 CREATE POLICY "Allow super_admin insert" ON admin_users FOR INSERT TO authenticated 
   WITH CHECK (
     EXISTS (
