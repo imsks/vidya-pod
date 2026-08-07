@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { connectDB } from "@/lib/mongodb";
+import { SponsorOrder } from "@/lib/models";
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabase();
+    await connectDB();
+
     const body = await request.json();
     const { name, email, phone, plan, amount } = body;
 
@@ -58,7 +60,7 @@ export async function POST(request: Request) {
 
     const cashfreeData = await cashfreeRes.json();
 
-    const { error: dbError } = await supabase.from("sponsor_orders").insert({
+    await SponsorOrder.create({
       order_id: orderId,
       name,
       email,
@@ -69,19 +71,12 @@ export async function POST(request: Request) {
       payment_session_id: cashfreeData.payment_session_id,
     });
 
-    if (dbError) {
-      console.error("DB error:", dbError);
-      return NextResponse.json(
-        { error: "Failed to save order" },
-        { status: 500 },
-      );
-    }
-
     return NextResponse.json({
       orderId,
       paymentSessionId: cashfreeData.payment_session_id,
     });
-  } catch {
+  } catch (error) {
+    console.error("Error in sponsor route:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

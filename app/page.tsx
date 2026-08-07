@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HomePage } from "@/components/home-page";
+import { createClient } from "@/utils/supabase/server";
 
 export const metadata: Metadata = {
   title: "Vidya Pods — Free Home Tuitions for Every Child",
@@ -12,6 +13,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
-  return <HomePage />;
+export default async function Page() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return <HomePage user={user} />;
 }

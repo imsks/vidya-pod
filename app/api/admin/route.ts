@@ -1,21 +1,29 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { connectDB } from "@/lib/mongodb";
+import {
+  Proctor,
+  SponsorOrder,
+  Student,
+  Teacher,
+} from "@/lib/models";
+import { serializeDocuments } from "@/lib/serialize";
 
 export async function GET() {
   try {
-    const supabase = getSupabase();
+    await connectDB();
+
     const [teachers, students, proctors, sponsors] = await Promise.all([
-      supabase.from("teachers").select("*").order("created_at", { ascending: false }),
-      supabase.from("students").select("*").order("created_at", { ascending: false }),
-      supabase.from("proctors").select("*").order("created_at", { ascending: false }),
-      supabase.from("sponsor_orders").select("*").order("created_at", { ascending: false }),
+      Teacher.find().sort({ created_at: -1 }).lean(),
+      Student.find().sort({ created_at: -1 }).lean(),
+      Proctor.find().sort({ created_at: -1 }).lean(),
+      SponsorOrder.find().sort({ created_at: -1 }).lean(),
     ]);
 
     return NextResponse.json({
-      teachers: teachers.data ?? [],
-      students: students.data ?? [],
-      proctors: proctors.data ?? [],
-      sponsors: sponsors.data ?? [],
+      teachers: serializeDocuments(teachers),
+      students: serializeDocuments(students),
+      proctors: serializeDocuments(proctors),
+      sponsors: serializeDocuments(sponsors),
     });
   } catch {
     return NextResponse.json(

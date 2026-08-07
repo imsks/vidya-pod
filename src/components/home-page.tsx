@@ -3,7 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import { PRICING, type PlanType } from "@/constants/pricing";
+import { signInWithGoogle, signOut } from "@/lib/auth";
 
 function Reveal({
   children,
@@ -77,7 +80,32 @@ function Counter({
   );
 }
 
-function Nav() {
+function Nav({ user }: { user: User | null }) {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  async function handleLogin() {
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch {
+      setLoading(false);
+    }
+  }
+
+  async function handleSignOut() {
+    await signOut();
+    router.refresh();
+  }
+
+  async function handleSponsor() {
+    if (user) {
+      router.push("/sponsor");
+    } else {
+      await signInWithGoogle("/sponsor");
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/70 border-b border-border/60">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -101,22 +129,53 @@ function Nav() {
           <a href="#opensource" className="hover:text-foreground transition">
             Open Source
           </a>
-          <Link href="/sponsor" className="hover:text-foreground transition">
+          <button
+            onClick={handleSponsor}
+            className="hover:text-foreground transition"
+          >
             Sponsor
-          </Link>
+          </button>
         </nav>
-        <Link
-          href="/sponsor"
-          className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
-        >
-          Sponsor →
-        </Link>
+        <div className="flex items-center gap-3">
+          {user ? (
+            <button
+              onClick={handleSignOut}
+              className="rounded-full border border-border px-5 py-2 text-sm font-semibold hover:bg-muted transition"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <button
+              onClick={handleLogin}
+              disabled={loading}
+              className="rounded-full border border-border px-5 py-2 text-sm font-semibold hover:bg-muted transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Redirecting…" : "Login"}
+            </button>
+          )}
+
+          <button
+            onClick={handleSponsor}
+            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
+          >
+            Sponsor →
+          </button>
+        </div>
       </div>
     </header>
   );
 }
 
-function Hero() {
+function Hero({ user }: { user: User | null }) {
+  const router = useRouter();
+
+  async function handleSponsor() {
+    if (user) {
+      router.push("/sponsor");
+    } else {
+      await signInWithGoogle("/sponsor");
+    }
+  }
   return (
     <section id="top" className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-warm" />
@@ -143,15 +202,15 @@ function Hero() {
             managed by proctors, fuelled by sponsors like you.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
-            <Link
-              href="/sponsor"
+            <button
+              onClick={handleSponsor}
               className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-7 py-4 font-semibold shadow-glow hover:shadow-lift transition-all hover:-translate-y-0.5"
             >
               Become a Sponsor
               <span className="transition-transform group-hover:translate-x-1">
                 →
               </span>
-            </Link>
+            </button>
             <a
               href="#how"
               className="inline-flex items-center gap-2 rounded-full border-2 border-foreground/15 bg-card px-7 py-4 font-semibold hover:border-foreground/40 transition-all"
@@ -432,11 +491,10 @@ function Showcase() {
             <button
               key={t}
               onClick={() => setActive(t)}
-              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
-                active === t
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${active === t
                   ? "bg-foreground text-background shadow-soft"
                   : "bg-card text-muted-foreground hover:text-foreground border border-border"
-              }`}
+                }`}
             >
               {t}
             </button>
@@ -551,7 +609,16 @@ function Tributes() {
   );
 }
 
-function SponsorCTA() {
+function SponsorCTA({ user }: { user: User | null }) {
+  const router = useRouter();
+
+  async function handleSponsor() {
+    if (user) {
+      router.push("/sponsor");
+    } else {
+      await signInWithGoogle("/sponsor");
+    }
+  }
   return (
     <section
       id="sponsor"
@@ -592,11 +659,10 @@ function SponsorCTA() {
             return (
               <Reveal key={key} delay={(i + 1) * 100}>
                 <div
-                  className={`relative h-full p-8 rounded-3xl transition-all hover:-translate-y-1 ${
-                    plan.featured
+                  className={`relative h-full p-8 rounded-3xl transition-all hover:-translate-y-1 ${plan.featured
                       ? "bg-gradient-hero border border-white/30 shadow-glow"
                       : "bg-card/10 backdrop-blur-xl border border-white/20 hover:border-white/40"
-                  }`}
+                    }`}
                 >
                   {plan.featured && (
                     <div className="absolute -top-3 right-6 bg-foreground text-background text-xs font-bold px-3 py-1 rounded-full">
@@ -631,16 +697,15 @@ function SponsorCTA() {
                       <li key={f}>✓ {f}</li>
                     ))}
                   </ul>
-                  <Link
-                    href="/sponsor"
-                    className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-6 py-4 font-bold hover:scale-[1.02] transition-transform ${
-                      plan.featured
+                  <button
+                    onClick={handleSponsor}
+                    className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-6 py-4 font-bold hover:scale-[1.02] transition-transform ${plan.featured
                         ? "bg-foreground text-background"
                         : "bg-white text-foreground"
-                    }`}
+                      }`}
                   >
                     Sponsor {plan.label} →
-                  </Link>
+                  </button>
                 </div>
               </Reveal>
             );
@@ -938,16 +1003,16 @@ function Footer() {
   );
 }
 
-export function HomePage() {
+export function HomePage({ user }: { user: User | null }) {
   return (
     <main>
-      <Nav />
-      <Hero />
+      <Nav user={user} />
+      <Hero user={user} />
       <Stats />
       <HowItWorks />
       <Showcase />
       <Tributes />
-      <SponsorCTA />
+      <SponsorCTA user={user} />
       <FAQ />
       <OpenSource />
       <Footer />

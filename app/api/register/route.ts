@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { connectDB } from "@/lib/mongodb";
+import { Proctor, Student, Teacher } from "@/lib/models";
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabase();
-    
+    await connectDB();
+
     const body = await request.json();
     const { role, name, phone, qualification, standard, image_url } = body;
 
@@ -19,8 +20,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    let result;
-
     if (role === "student") {
       if (!standard) {
         return NextResponse.json(
@@ -28,7 +27,8 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-      result = await supabase.from("students").insert({ name, phone, standard, image_url });
+
+      await Student.create({ name, phone, standard, image_url });
     } else {
       if (!qualification) {
         return NextResponse.json(
@@ -36,20 +36,14 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-      const table = role === "teacher" ? "teachers" : "proctors";
-      result = await supabase.from(table).insert({ name, phone, qualification, image_url });
-    }
 
-    if (result.error) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: 500 },
-      );
+      const Model = role === "teacher" ? Teacher : Proctor;
+      await Model.create({ name, phone, qualification, image_url });
     }
 
     return NextResponse.json({ success: true });
-  } catch(e) {
-    console.error("Error in register route:", e);
+  } catch (error) {
+    console.error("Error in register route:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
