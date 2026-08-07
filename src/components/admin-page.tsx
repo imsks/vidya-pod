@@ -1,40 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-
-const ADMIN_ID = "sachin";
-const ADMIN_PASSWORD = "sachin";
+import { createClient } from "@/lib/supabase-browser";
+import type { User } from "@supabase/supabase-js";
 
 type Tab = "teachers" | "students" | "proctors" | "sponsors";
 
 export function AdminPage() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [loginId, setLoginId] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("teachers");
   const [teachers, setTeachers] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [proctors, setProctors] = useState<any[]>([]);
   const [sponsors, setSponsors] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loginId === ADMIN_ID && loginPassword === ADMIN_PASSWORD) {
-      setLoggedIn(true);
-      setLoginError("");
-    } else {
-      setLoginError("Invalid credentials");
-    }
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!loggedIn) return;
-    const loadData = async () => {
-      setLoading(true);
+    const supabase = createClient();
+
+    // Get initial user
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      
+      if (!user) {
+        router.push("/login?redirectTo=/admin");
+        return;
+      }
+      
+      // Load admin data
       try {
         const res = await fetch("/api/admin");
         if (!res.ok) throw new Error("Failed to fetch");
@@ -49,65 +46,31 @@ export function AdminPage() {
         setLoading(false);
       }
     };
-    loadData();
-  }, [loggedIn]);
 
-  if (!loggedIn) {
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        router.push("/login?redirectTo=/admin");
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
+  if (!user || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <form
-          onSubmit={handleLogin}
-          className="w-full max-w-sm p-8 rounded-3xl bg-card border border-border shadow-lift space-y-5"
-        >
-          <div className="text-center">
-            <div className="w-14 h-14 mx-auto rounded-xl bg-gradient-hero flex items-center justify-center text-2xl shadow-glow">
-              🔐
-            </div>
-            <h1 className="mt-4 text-2xl font-black font-display">
-              Admin Login
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Vidya Pods Admin Panel
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">User ID</label>
-            <input
-              type="text"
-              required
-              value={loginId}
-              onChange={(e) => setLoginId(e.target.value)}
-              placeholder="Enter your ID"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Password</label>
-            <input
-              type="password"
-              required
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-            />
-          </div>
-
-          {loginError && (
-            <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm text-center">
-              {loginError}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-gradient-hero text-primary-foreground px-6 py-3 font-bold shadow-glow hover:shadow-lift transition-all"
-          >
-            Login →
-          </button>
-        </form>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     );
   }
@@ -135,6 +98,16 @@ export function AdminPage() {
             </span>
           </div>
           <div className="flex items-center gap-4">
+            {user?.user_metadata?.avatar_url && (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt=""
+                className="w-8 h-8 rounded-full"
+              />
+            )}
+            <span className="text-sm text-muted-foreground hidden sm:block">
+              {user?.user_metadata?.full_name || user?.email}
+            </span>
             <Link
               href="/register"
               className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2 text-sm font-semibold hover:shadow-lift transition-all"
@@ -142,7 +115,7 @@ export function AdminPage() {
               + Register User
             </Link>
             <button
-              onClick={() => setLoggedIn(false)}
+              onClick={handleLogout}
               className="text-sm text-muted-foreground hover:text-foreground transition"
             >
               Logout
