@@ -15,15 +15,12 @@ test.describe("Home Page", () => {
     await expect(page.getByRole("link", { name: /vidya pods/i })).toBeVisible();
   });
 
-  test("should navigate to register page", async ({ page }) => {
+  test("should have 'Become a Sponsor' call to action", async ({ page }) => {
     await page.goto("/");
 
-    // Find and click the register link
-    const registerLink = page.getByRole("link", { name: /become a teacher/i });
-    if (await registerLink.isVisible()) {
-      await registerLink.click();
-      await expect(page).toHaveURL(/.*register.*/);
-    }
+    // Check that the main CTA button is visible
+    const ctaButton = page.getByRole("link", { name: /become a sponsor/i });
+    await expect(ctaButton).toBeVisible();
   });
 
   test("should navigate to sponsor page", async ({ page }) => {
@@ -31,10 +28,9 @@ test.describe("Home Page", () => {
 
     // Find and click the sponsor link
     const sponsorLink = page.getByRole("link", { name: /sponsor/i }).first();
-    if (await sponsorLink.isVisible()) {
-      await sponsorLink.click();
-      await expect(page).toHaveURL(/.*sponsor.*/);
-    }
+    await expect(sponsorLink).toBeVisible();
+    await sponsorLink.click();
+    await expect(page).toHaveURL(/.*sponsor.*/);
   });
 
   test("should have proper page title", async ({ page }) => {
