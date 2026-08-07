@@ -15,8 +15,11 @@ export interface SponsorOrderDocument {
   amount: number;
   status: SponsorStatus;
   payment_session_id?: string;
+  cf_order_id?: string;
+  paid_at?: Date;
   image_url?: string;
   created_at: Date;
+  updated_at: Date;
 }
 
 const SponsorOrderSchema = new Schema<SponsorOrderDocument>(
@@ -38,10 +41,12 @@ const SponsorOrderSchema = new Schema<SponsorOrderDocument>(
       default: "PENDING",
     },
     payment_session_id: { type: String },
+    cf_order_id: { type: String },
+    paid_at: { type: Date },
     image_url: { type: String },
   },
   {
-    timestamps: { createdAt: "created_at", updatedAt: false },
+    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
     collection: "sponsor_orders",
   },
 );
