@@ -773,10 +773,10 @@ function Footer() {
               Want to teach? Volunteer? Partner? Write to us.
             </p>
             <a
-              href="mailto:hello@vidyapods.org"
+              href="mailto:theboringeducation@gmail.com"
               className="mt-2 inline-block text-primary-foreground font-semibold underline underline-offset-4"
             >
-              hello@vidyapods.org
+              theboringeducation@gmail.com
             </a>
             <div className="mt-6">
               <div className="text-xs font-bold uppercase tracking-widest opacity-60">
