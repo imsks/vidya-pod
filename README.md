@@ -38,6 +38,47 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
+## Authentication (Google OAuth)
+
+This app uses Supabase Authentication with Google OAuth for admin access. The admin panel (`/admin`) and registration page (`/register`) are protected routes.
+
+### Setup Google OAuth
+
+1. **Google Cloud Console:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Navigate to "APIs & Services" → "Credentials"
+   - Create OAuth 2.0 Client ID (Web Application type)
+   - Add authorized redirect URI: `https://your-project.supabase.co/auth/v1/callback`
+   - Copy the Client ID and Client Secret
+
+2. **Supabase Dashboard:**
+   - Go to Authentication → Providers → Google
+   - Enable Google Provider
+   - Paste your Google Client ID and Client Secret
+   - Save the configuration
+
+3. **Configure Redirect URLs:**
+   - In Supabase Dashboard → Authentication → URL Configuration
+   - Add your site URL (e.g., `https://your-domain.com`)
+   - Add redirect URLs for both development and production
+
+### Auth Flow
+
+1. User visits `/admin` or `/register`
+2. Middleware redirects unauthenticated users to `/login`
+3. User clicks "Continue with Google"
+4. After successful OAuth, user is redirected back to the originally requested page
+
+### Admin Access
+
+For beta, any user who successfully authenticates via Google can access the admin panel. For production, you may want to:
+
+1. Use the `admin_users` table to restrict access to specific email addresses
+2. Implement role-based access control using the `role` column
+
+---
+
 ## Full local Supabase (optional)
 
 Use this if you want Postgres, Auth, Storage, and Studio running entirely on your machine — no cloud project required for day-to-day testing.
