@@ -5,6 +5,42 @@ import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { PRICING, type PlanType } from "@/constants/pricing";
 
+type VerifyStatus = "loading" | "SUCCESS" | "FAILED" | "PENDING" | "ERROR";
+
+const VERIFY_CONTENT: Record<
+  VerifyStatus,
+  { emoji: string; title: string; message: string }
+> = {
+  loading: {
+    emoji: "⏳",
+    title: "Verifying Payment",
+    message:
+      "Hang on while we confirm your sponsorship with the payment gateway.",
+  },
+  SUCCESS: {
+    emoji: "🎉",
+    title: "Thank You!",
+    message: "Your sponsorship is confirmed. You'll receive a receipt shortly.",
+  },
+  FAILED: {
+    emoji: "⚠️",
+    title: "Payment Failed",
+    message: "We couldn't confirm your payment. No amount has been charged.",
+  },
+  PENDING: {
+    emoji: "⏳",
+    title: "Payment Processing",
+    message:
+      "Your payment is still being processed. This page updates once it clears.",
+  },
+  ERROR: {
+    emoji: "⏳",
+    title: "Payment Processing",
+    message:
+      "We couldn't reach the payment gateway just now. Your order is safe.",
+  },
+};
+
 function useCashfreeSDK() {
   const [loaded, setLoaded] = useState(false);
 
@@ -43,31 +79,67 @@ export function SponsorPage() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>("loading");
   const { loaded: cashfreeLoaded, launchPayment } = useCashfreeSDK();
+
+  // Cashfree redirects back here with ?order_id=..., but the redirect itself
+  // is not proof of payment — only the server can confirm it.
+  useEffect(() => {
+    if (!orderId) return;
+    let cancelled = false;
+
+    fetch(`/api/sponsor/verify?order_id=${encodeURIComponent(orderId)}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("failed"))))
+      .then((data) => {
+        if (!cancelled) setVerifyStatus(data.status);
+      })
+      .catch(() => {
+        if (!cancelled) setVerifyStatus("ERROR");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
 
   const pricing = PRICING[plan];
 
   if (orderId) {
+    const content = VERIFY_CONTENT[verifyStatus];
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto rounded-full bg-accent/20 flex items-center justify-center text-4xl">
-            🎉
-          </div>
-          <h1 className="mt-6 text-3xl font-black font-display">Thank You!</h1>
-          <p className="mt-3 text-muted-foreground">
-            Your sponsorship is being processed. Order ID:{" "}
-            <strong className="text-foreground">{orderId}</strong>
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            You&apos;ll receive a confirmation once the payment is verified.
-          </p>
-          <Link
-            href="/"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-6 py-3 font-semibold hover:bg-primary hover:text-primary-foreground transition-all"
+          <div
+            className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl ${
+              verifyStatus === "FAILED" ? "bg-destructive/20" : "bg-accent/20"
+            }`}
           >
-            ← Back Home
-          </Link>
+            {content.emoji}
+          </div>
+          <h1 className="mt-6 text-3xl font-black font-display">
+            {content.title}
+          </h1>
+          <p className="mt-3 text-muted-foreground">
+            Order ID: <strong className="text-foreground">{orderId}</strong>
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{content.message}</p>
+          <div className="mt-8 flex items-center justify-center gap-3">
+            {verifyStatus === "FAILED" && (
+              <Link
+                href="/sponsor"
+                className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-semibold hover:opacity-90 transition-all"
+              >
+                Try Again
+              </Link>
+            )}
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-6 py-3 font-semibold hover:bg-primary hover:text-primary-foreground transition-all"
+            >
+              ← Back Home
+            </Link>
+          </div>
         </div>
       </div>
     );

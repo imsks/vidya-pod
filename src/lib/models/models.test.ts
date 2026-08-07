@@ -96,4 +96,40 @@ describe("SponsorOrder model", () => {
     expect(orderIdPath).toBeDefined();
     expect(orderIdPath?.options.unique).toBe(true);
   });
+
+  it("accepts SUCCESS and FAILED status values", async () => {
+    for (const status of ["SUCCESS", "FAILED"]) {
+      const order = new SponsorOrder({
+        order_id: "VP_test",
+        name: "Sponsor",
+        email: "sponsor@example.com",
+        phone: "9876543210",
+        plan: "monthly",
+        amount: 500,
+        status,
+      });
+
+      await expect(order.validate()).resolves.toBeUndefined();
+    }
+  });
+
+  it("accepts optional verification fields", async () => {
+    const order = new SponsorOrder({
+      order_id: "VP_test",
+      name: "Sponsor",
+      email: "sponsor@example.com",
+      phone: "9876543210",
+      plan: "monthly",
+      amount: 500,
+      status: "SUCCESS",
+      cf_order_id: "cf_123",
+      paid_at: new Date(),
+    });
+
+    await expect(order.validate()).resolves.toBeUndefined();
+  });
+
+  it("tracks updated_at via timestamps", () => {
+    expect(SponsorOrder.schema.path("updated_at")).toBeDefined();
+  });
 });
