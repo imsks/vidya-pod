@@ -105,12 +105,20 @@ function Nav() {
             Sponsor
           </Link>
         </nav>
-        <Link
-          href="/sponsor"
-          className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
-        >
-          Sponsor →
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            className="rounded-full border border-border px-5 py-2 text-sm font-semibold hover:bg-muted transition"
+          >
+            Login
+          </button>
+
+          <Link
+            href="/sponsor"
+            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
+          >
+            Sponsor →
+          </Link>
+        </div>
       </div>
     </header>
   );
@@ -432,11 +440,10 @@ function Showcase() {
             <button
               key={t}
               onClick={() => setActive(t)}
-              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
-                active === t
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${active === t
                   ? "bg-foreground text-background shadow-soft"
                   : "bg-card text-muted-foreground hover:text-foreground border border-border"
-              }`}
+                }`}
             >
               {t}
             </button>
@@ -592,11 +599,10 @@ function SponsorCTA() {
             return (
               <Reveal key={key} delay={(i + 1) * 100}>
                 <div
-                  className={`relative h-full p-8 rounded-3xl transition-all hover:-translate-y-1 ${
-                    plan.featured
+                  className={`relative h-full p-8 rounded-3xl transition-all hover:-translate-y-1 ${plan.featured
                       ? "bg-gradient-hero border border-white/30 shadow-glow"
                       : "bg-card/10 backdrop-blur-xl border border-white/20 hover:border-white/40"
-                  }`}
+                    }`}
                 >
                   {plan.featured && (
                     <div className="absolute -top-3 right-6 bg-foreground text-background text-xs font-bold px-3 py-1 rounded-full">
@@ -633,11 +639,10 @@ function SponsorCTA() {
                   </ul>
                   <Link
                     href="/sponsor"
-                    className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-6 py-4 font-bold hover:scale-[1.02] transition-transform ${
-                      plan.featured
+                    className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-6 py-4 font-bold hover:scale-[1.02] transition-transform ${plan.featured
                         ? "bg-foreground text-background"
                         : "bg-white text-foreground"
-                    }`}
+                      }`}
                   >
                     Sponsor {plan.label} →
                   </Link>
