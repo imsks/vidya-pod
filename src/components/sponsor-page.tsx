@@ -33,9 +33,12 @@ function useCashfreeSDK() {
   return { loaded, launchPayment };
 }
 
+import { useAuth } from "@/context/auth-context";
+
 export function SponsorPage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order_id");
+  const { user } = useAuth();
 
   const [plan, setPlan] = useState<PlanType>("monthly");
   const [name, setName] = useState("");
@@ -44,6 +47,17 @@ export function SponsorPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { loaded: cashfreeLoaded, launchPayment } = useCashfreeSDK();
+
+  useEffect(() => {
+    if (user) {
+      if (!name && user.user_metadata?.full_name) {
+        setName(user.user_metadata.full_name);
+      }
+      if (!email && user.email) {
+        setEmail(user.email);
+      }
+    }
+  }, [user]);
 
   const pricing = PRICING[plan];
 

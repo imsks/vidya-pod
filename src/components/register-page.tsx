@@ -3,12 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { useEffect } from "react";
+import { useAuth } from "@/context/auth-context";
+
 type Role = "teacher" | "student" | "proctor";
 
 const ADMIN_ID = "sachin";
 const ADMIN_PASSWORD = "sachin";
 
 export function RegisterPage() {
+  const { user } = useAuth();
   const [loggedIn, setLoggedIn] = useState(false);
   const [loginId, setLoginId] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -24,6 +28,12 @@ export function RegisterPage() {
   const [qualification, setQualification] = useState("");
   const [standard, setStandard] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+
+  useEffect(() => {
+    if (user?.user_metadata?.full_name && !name) {
+      setName(user.user_metadata.full_name);
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
