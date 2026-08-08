@@ -5,21 +5,21 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./src/test/setup.ts"],
+    setupFiles: ["./tests/setup.ts"],
+    include: [
+      "tests/unit/**/*.test.ts",
+      "tests/integration/**/*.test.ts",
+    ],
+    exclude: ["tests/e2e/**", "node_modules/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
       include: ["src/**/*.{ts,tsx}"],
-      exclude: [
-        "src/test/**",
-        "**/*.d.ts",
-        "**/node_modules/**",
-      ],
     },
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });

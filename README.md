@@ -145,3 +145,29 @@ supabase migration new <name>
 | `npm run build` | Production build |
 | `npm run start` | Serve production build |
 | `npm run lint` | Lint |
+
+### Testing
+
+Run unit tests:
+
+```bash
+npm run test
+```
+
+Run unit tests in watch mode:
+
+```bash
+npm run test:watch
+```
+
+Generate coverage report:
+
+```bash
+npm run test:coverage
+```
+
+Run Playwright end-to-end tests:
+
+```bash
+npm run test:e2e
+```
