@@ -47,6 +47,9 @@ CREATE TABLE IF NOT EXISTS students (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure idempotent column addition for existing deployments
+ALTER TABLE students ADD COLUMN IF NOT EXISTS has_app_access BOOLEAN DEFAULT TRUE;
+
 -- -------------------------------------------------------------
 -- 4. Proctors Table
 -- -------------------------------------------------------------
@@ -146,6 +149,7 @@ ALTER TABLE pod_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE learner_feedbacks ENABLE ROW LEVEL SECURITY;
 
+-- Note: In production with server-side API routes, RLS policies allow server-side operations via Supabase client.
 CREATE POLICY "Allow public select admins" ON admins FOR SELECT USING (true);
 CREATE POLICY "Allow public insert teachers" ON teachers FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public select teachers" ON teachers FOR SELECT USING (true);

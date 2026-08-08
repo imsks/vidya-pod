@@ -30,3 +30,4 @@ out
 
 .env
 .env.production
+*.tsbuildinfo

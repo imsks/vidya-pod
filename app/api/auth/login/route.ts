@@ -23,6 +23,13 @@ export async function POST(request: Request) {
 
     // 1. ADMIN LOGIN
     if (role === "admin") {
+      if (!password) {
+        return NextResponse.json(
+          { error: "Admin password is required" },
+          { status: 400 },
+        );
+      }
+
       // Dev fallback credentials
       if (cleanIdentifier === "sachin" && password === "sachin") {
         return NextResponse.json({
@@ -42,7 +49,7 @@ export async function POST(request: Request) {
         .eq("username", cleanIdentifier)
         .single();
 
-      if (error || !admin || (password && admin.password !== password)) {
+      if (error || !admin || admin.password !== password) {
         return NextResponse.json(
           { error: "Invalid admin credentials" },
           { status: 401 },
@@ -59,19 +66,26 @@ export async function POST(request: Request) {
       });
     }
 
-    // 2. TEACHER LOGIN
+    // 2. TEACHER LOGIN (Exact phone or email match)
     if (role === "teacher") {
       const { data: teacher, error } = await supabase
         .from("teachers")
         .select("*")
-        .or(`phone.eq.${identifier},name.ilike.%${identifier}%`)
+        .or(`phone.eq.${identifier},email.eq.${cleanIdentifier}`)
         .limit(1)
         .maybeSingle();
 
       if (error || !teacher) {
         return NextResponse.json(
-          { error: "Teacher profile not found. Please register first." },
+          { error: "Teacher profile not found. Please check registered phone or email." },
           { status: 404 },
+        );
+      }
+
+      if (teacher.password && password && teacher.password !== password) {
+        return NextResponse.json(
+          { error: "Invalid password for teacher account" },
+          { status: 401 },
         );
       }
 
@@ -87,18 +101,26 @@ export async function POST(request: Request) {
       });
     }
 
-    // 3. STUDENT / LEARNER LOGIN
+    // 3. STUDENT / LEARNER LOGIN (Exact phone, email or UUID match)
     if (role === "student") {
-      const { data: student, error } = await supabase
-        .from("students")
-        .select("*")
-        .or(`phone.eq.${identifier},name.ilike.%${identifier}%`)
-        .limit(1)
-        .maybeSingle();
+      // Validate UUID format if identifier looks like a UUID
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          identifier,
+        );
+
+      let query = supabase.from("students").select("*");
+      if (isUuid) {
+        query = query.eq("id", identifier);
+      } else {
+        query = query.or(`phone.eq.${identifier},email.eq.${cleanIdentifier}`);
+      }
+
+      const { data: student, error } = await query.limit(1).maybeSingle();
 
       if (error || !student) {
         return NextResponse.json(
-          { error: "Learner profile not found." },
+          { error: "Learner profile not found. Please enter registered phone or student ID." },
           { status: 404 },
         );
       }
@@ -126,19 +148,26 @@ export async function POST(request: Request) {
       });
     }
 
-    // 4. PROCTOR LOGIN
+    // 4. PROCTOR LOGIN (Exact phone or email match)
     if (role === "proctor") {
       const { data: proctor, error } = await supabase
         .from("proctors")
         .select("*")
-        .or(`phone.eq.${identifier},name.ilike.%${identifier}%`)
+        .or(`phone.eq.${identifier},email.eq.${cleanIdentifier}`)
         .limit(1)
         .maybeSingle();
 
       if (error || !proctor) {
         return NextResponse.json(
-          { error: "Proctor profile not found." },
+          { error: "Proctor profile not found. Please check registered phone or email." },
           { status: 404 },
+        );
+      }
+
+      if (proctor.password && password && proctor.password !== password) {
+        return NextResponse.json(
+          { error: "Invalid password for proctor account" },
+          { status: 401 },
         );
       }
 
@@ -154,7 +183,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // 5. DONOR LOGIN
+    // 5. DONOR LOGIN (Exact email or phone match)
     if (role === "donor") {
       const { data: donorOrder, error } = await supabase
         .from("sponsor_orders")
