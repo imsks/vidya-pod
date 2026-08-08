@@ -2,7 +2,7 @@
 -- Run this script in your Supabase SQL Editor
 
 -- -------------------------------------------------------------
--- 1. Admins Table
+-- 1. Admins Table (Private - Server/Service Role Only)
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS admins (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS students (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ensure idempotent column addition for existing deployments
+-- Ensure idempotent column addition for existing deployments (Item 18)
 ALTER TABLE students ADD COLUMN IF NOT EXISTS has_app_access BOOLEAN DEFAULT TRUE;
 
 -- -------------------------------------------------------------
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS learner_feedbacks (
 );
 
 -- -------------------------------------------------------------
--- Enable RLS & Set Explicit Operation Policies
+-- Enable Row Level Security (RLS)
 -- -------------------------------------------------------------
 ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teachers ENABLE ROW LEVEL SECURITY;
@@ -143,6 +143,9 @@ ALTER TABLE pods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pod_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE learner_feedbacks ENABLE ROW LEVEL SECURITY;
+
+-- Item 2: Admins table has NO public SELECT policy to prevent credential disclosure.
+-- Server-side API endpoints access `admins` via trusted database context.
 
 -- Teachers
 CREATE POLICY "Allow select teachers" ON teachers FOR SELECT USING (true);
@@ -159,12 +162,11 @@ CREATE POLICY "Allow select proctors" ON proctors FOR SELECT USING (true);
 CREATE POLICY "Allow insert proctors" ON proctors FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow update proctors" ON proctors FOR UPDATE USING (true);
 
--- Sponsors / Orders
+-- Item 14: Sponsor Orders (Public INSERT for checkout; updates restricted to trusted service/webhook)
 CREATE POLICY "Allow select sponsor_orders" ON sponsor_orders FOR SELECT USING (true);
 CREATE POLICY "Allow insert sponsor_orders" ON sponsor_orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow update sponsor_orders" ON sponsor_orders FOR UPDATE USING (true);
 
--- Pods & Memberships
+-- Pods & Memberships (Item 3: Specific operation policies)
 CREATE POLICY "Allow select pods" ON pods FOR SELECT USING (true);
 CREATE POLICY "Allow insert pods" ON pods FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow update pods" ON pods FOR UPDATE USING (true);
@@ -175,7 +177,7 @@ CREATE POLICY "Allow insert pod_memberships" ON pod_memberships FOR INSERT WITH 
 CREATE POLICY "Allow update pod_memberships" ON pod_memberships FOR UPDATE USING (true);
 CREATE POLICY "Allow delete pod_memberships" ON pod_memberships FOR DELETE USING (true);
 
--- Attendance & Feedback
+-- Attendance & Feedback (Item 3)
 CREATE POLICY "Allow select attendance_records" ON attendance_records FOR SELECT USING (true);
 CREATE POLICY "Allow insert attendance_records" ON attendance_records FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow update attendance_records" ON attendance_records FOR UPDATE USING (true);

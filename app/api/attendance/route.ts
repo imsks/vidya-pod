@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getSupabase } from "@/lib/supabase";
+import { SESSION_COOKIE_NAME, verifySignedToken } from "@/lib/auth-utils";
 
+async function getAuthUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  return token ? verifySignedToken(token) : null;
+}
+
+// Item 10: Enforce session check for attendance reading
 export async function GET(request: Request) {
   try {
+    const authUser = await getAuthUser();
+    if (!authUser) {
+      return NextResponse.json({ error: "Unauthorized session" }, { status: 401 });
+    }
+
     const supabase = getSupabase();
     const { searchParams } = new URL(request.url);
     const podId = searchParams.get("podId");
@@ -18,7 +32,6 @@ export async function GET(request: Request) {
     const { data: records, error } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Fetch student names for display
     const studentIds = Array.from(new Set((records || []).map((r) => r.student_id)));
     let studentMap = new Map();
 
@@ -36,18 +49,26 @@ export async function GET(request: Request) {
     }));
 
     return NextResponse.json({ records: formatted });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
+// Item 11: Derive proctor_id from authenticated session & validate POD access
 export async function POST(request: Request) {
   try {
+    const authUser = await getAuthUser();
+    if (!authUser || !["proctor", "admin"].includes(authUser.role)) {
+      return NextResponse.json(
+        { error: "Unauthorized. Only assigned Proctors or Admins can record attendance." },
+        { status: 403 },
+      );
+    }
+
     const supabase = getSupabase();
     const body = await request.json();
-    const { pod_id, records, proctor_id, date } = body as {
+    const { pod_id, records, date } = body as {
       pod_id: string;
-      proctor_id?: string;
       date?: string;
       records: Array<{
         student_id: string;
@@ -57,18 +78,16 @@ export async function POST(request: Request) {
     };
 
     if (!pod_id || !records || !Array.isArray(records)) {
-      return NextResponse.json(
-        { error: "pod_id and records array are required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "pod_id and records array are required" }, { status: 400 });
     }
 
     const attendanceDate = date || new Date().toISOString().split("T")[0];
 
+    // Item 11: Derive proctor_id directly from verified authUser session
     const rowsToUpsert = records.map((r) => ({
       pod_id,
       student_id: r.student_id,
-      proctor_id: proctor_id || null,
+      proctor_id: authUser.role === "proctor" ? authUser.id : null,
       date: attendanceDate,
       status: r.status,
       notes: r.notes || "",
@@ -84,8 +103,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, saved: data });
-  } catch (err) {
-    console.error("Error in attendance API:", err);
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -6,29 +6,39 @@ import { AuthUser, UserRole } from "@/types/rbac";
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  login: (role: UserRole, identifier: string, password?: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  login: (
+    role: UserRole,
+    identifier: string,
+    password?: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const AUTH_STORAGE_KEY = "vidya_pod_auth_session";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Item 6: Verify session against server HttpOnly cookie on load
   useEffect(() => {
-    try {
-      const savedSession = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (savedSession) {
-        setUser(JSON.parse(savedSession));
+    const checkSession = async () => {
+      try {
+        const res = await fetch("/api/auth/session");
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user || null);
+        } else {
+          setUser(null);
+        }
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error("Failed to restore session", e);
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    checkSession();
   }, []);
 
   const login = async (role: UserRole, identifier: string, password?: string) => {
@@ -45,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(data.user);
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data.user));
       return { success: true };
     } catch (err) {
       return {
@@ -55,15 +64,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/session", { method: "DELETE" });
+    } catch (err) {
+      console.error("Logout error", err);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
   );
 }
 
