@@ -9,7 +9,7 @@ async function getAuthUser() {
   return token ? verifySignedToken(token) : null;
 }
 
-// Item 10: Enforce session check for attendance reading
+// Item 3: Require authentication and scope attendance queries by role
 export async function GET(request: Request) {
   try {
     const authUser = await getAuthUser();
@@ -25,8 +25,14 @@ export async function GET(request: Request) {
 
     let query = supabase.from("attendance_records").select("*").order("date", { ascending: false });
 
+    // Item 3 Scope Rule: Students can strictly ONLY query their own attendance
+    if (authUser.role === "student") {
+      query = query.eq("student_id", authUser.id);
+    } else if (studentId) {
+      query = query.eq("student_id", studentId);
+    }
+
     if (podId) query = query.eq("pod_id", podId);
-    if (studentId) query = query.eq("student_id", studentId);
     if (date) query = query.eq("date", date);
 
     const { data: records, error } = await query;
@@ -81,9 +87,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "pod_id and records array are required" }, { status: 400 });
     }
 
+    // Verify Proctor is assigned to the target POD before writing attendance
+    if (authUser.role === "proctor") {
+      const { data: membership } = await supabase
+        .from("pod_memberships")
+        .select("*")
+        .eq("pod_id", pod_id)
+        .eq("member_id", authUser.id)
+        .eq("role", "proctor")
+        .maybeSingle();
+
+      if (!membership) {
+        return NextResponse.json(
+          { error: "Unauthorized. Proctors can only record attendance for their assigned POD." },
+          { status: 403 },
+        );
+      }
+    }
+
     const attendanceDate = date || new Date().toISOString().split("T")[0];
 
-    // Item 11: Derive proctor_id directly from verified authUser session
     const rowsToUpsert = records.map((r) => ({
       pod_id,
       student_id: r.student_id,

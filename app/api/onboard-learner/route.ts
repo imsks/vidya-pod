@@ -9,7 +9,7 @@ async function getAuthUser() {
   return token ? verifySignedToken(token) : null;
 }
 
-// Item 17 & 19: Require Proctor/Admin session and ensure atomic learner creation & POD assignment
+// Item 7: Require Proctor/Admin session, verify proctor POD assignment, and perform atomic rollback
 export async function POST(request: Request) {
   try {
     const authUser = await getAuthUser();
@@ -29,6 +29,24 @@ export async function POST(request: Request) {
         { error: "Learner name, standard, and pod_id are required" },
         { status: 400 },
       );
+    }
+
+    // Verify Proctor is assigned to target POD
+    if (authUser.role === "proctor") {
+      const { data: membership } = await supabase
+        .from("pod_memberships")
+        .select("*")
+        .eq("pod_id", pod_id)
+        .eq("member_id", authUser.id)
+        .eq("role", "proctor")
+        .maybeSingle();
+
+      if (!membership) {
+        return NextResponse.json(
+          { error: "Unauthorized. Proctors can only onboard learners into their assigned POD." },
+          { status: 403 },
+        );
+      }
     }
 
     // 1. Create learner record in `students` table
@@ -58,7 +76,7 @@ export async function POST(request: Request) {
       role: "student",
     });
 
-    // Item 19: Atomic rollback cleanup if membership creation fails
+    // Atomic rollback cleanup if membership creation fails
     if (memError) {
       await supabase.from("students").delete().eq("id", student.id);
       return NextResponse.json(
@@ -74,8 +92,7 @@ export async function POST(request: Request) {
       learner: student,
       message: `Successfully onboarded ${name} into POD`,
     });
-  } catch (err) {
-    console.error("Error in onboard-learner route:", err);
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
