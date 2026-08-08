@@ -7,12 +7,27 @@ interface AdminDashboardProps {
   user: AuthUser;
 }
 
+interface MemberRecord {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  qualification?: string;
+  standard?: string;
+  amount?: number;
+  plan?: string;
+  status?: string;
+  has_app_access?: boolean;
+  image_url?: string;
+  created_at?: string;
+}
+
 export function AdminDashboard({ user }: AdminDashboardProps) {
   const [pods, setPods] = useState<DetailedPod[]>([]);
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
-  const [proctors, setProctors] = useState<any[]>([]);
-  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<MemberRecord[]>([]);
+  const [students, setStudents] = useState<MemberRecord[]>([]);
+  const [proctors, setProctors] = useState<MemberRecord[]>([]);
+  const [sponsors, setSponsors] = useState<MemberRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals state
@@ -26,16 +41,16 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
   const [assignRole, setAssignRole] = useState<UserRole>("teacher");
   const [assignMemberId, setAssignMemberId] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"pods" | "teachers" | "students" | "proctors" | "donors">("pods");
-  const [statusMsg, setStatusMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "pods" | "teachers" | "students" | "proctors" | "donors"
+  >("pods");
+  const [statusMsg, setStatusMsg] = useState<{ text: string; type: "success" | "error" } | null>(
+    null,
+  );
 
-  const loadAllData = async () => {
-    setLoading(true);
+  const reloadData = async () => {
     try {
-      const [podsRes, adminRes] = await Promise.all([
-        fetch("/api/pods"),
-        fetch("/api/admin"),
-      ]);
+      const [podsRes, adminRes] = await Promise.all([fetch("/api/pods"), fetch("/api/admin")]);
 
       const podsData = await podsRes.json();
       const adminData = await adminRes.json();
@@ -45,15 +60,38 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
       setStudents(adminData.students || []);
       setProctors(adminData.proctors || []);
       setSponsors(adminData.sponsors || []);
-    } catch (err) {
-      console.error("Failed to load admin data", err);
-    } finally {
-      setLoading(false);
+    } catch {
+      // ignore
     }
   };
 
   useEffect(() => {
-    loadAllData();
+    let isMounted = true;
+    const fetchAllData = async () => {
+      try {
+        const [podsRes, adminRes] = await Promise.all([fetch("/api/pods"), fetch("/api/admin")]);
+
+        const podsData = await podsRes.json();
+        const adminData = await adminRes.json();
+
+        if (isMounted) {
+          setPods(podsData.pods || []);
+          setTeachers(adminData.teachers || []);
+          setStudents(adminData.students || []);
+          setProctors(adminData.proctors || []);
+          setSponsors(adminData.sponsors || []);
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchAllData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleCreatePod = async (e: React.FormEvent) => {
@@ -78,7 +116,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
       setNewPodName("");
       setNewPodLocation("");
       setNewPodDesc("");
-      loadAllData();
+      reloadData();
     } catch (err) {
       setStatusMsg({
         text: err instanceof Error ? err.message : "Error creating POD",
@@ -106,7 +144,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
 
       setStatusMsg({ text: "Member successfully assigned to POD!", type: "success" });
       setShowAssignModal(false);
-      loadAllData();
+      reloadData();
     } catch (err) {
       setStatusMsg({
         text: err instanceof Error ? err.message : "Error assigning member",
@@ -122,10 +160,10 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
       });
       if (res.ok) {
         setStatusMsg({ text: "Member removed from POD", type: "success" });
-        loadAllData();
+        reloadData();
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignore
     }
   };
 
@@ -133,10 +171,10 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
     assignRole === "teacher"
       ? teachers
       : assignRole === "student"
-      ? students
-      : assignRole === "proctor"
-      ? proctors
-      : sponsors;
+        ? students
+        : assignRole === "proctor"
+          ? proctors
+          : sponsors.filter((s) => s.status === "SUCCESS");
 
   return (
     <div className="space-y-8">
@@ -144,7 +182,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-3xl bg-card border border-border shadow-soft">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-1">
-            Admin Master Control
+            Admin Master Control — {user.name}
           </div>
           <h2 className="text-2xl font-black font-display">POD Ecosystem Overview</h2>
           <p className="text-sm text-muted-foreground">
@@ -176,7 +214,10 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
           }`}
         >
           <span>{statusMsg.text}</span>
-          <button onClick={() => setStatusMsg(null)} className="text-xs opacity-70 hover:opacity-100">
+          <button
+            onClick={() => setStatusMsg(null)}
+            className="text-xs opacity-70 hover:opacity-100"
+          >
             ✕
           </button>
         </div>
@@ -238,7 +279,9 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
 
       {/* Tab Content */}
       {loading ? (
-        <div className="text-center py-20 text-muted-foreground font-medium">Loading POD ecosystem data...</div>
+        <div className="text-center py-20 text-muted-foreground font-medium">
+          Loading POD ecosystem data...
+        </div>
       ) : activeTab === "pods" ? (
         <div className="grid md:grid-cols-2 gap-6">
           {pods.length === 0 ? (
@@ -246,7 +289,8 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
               <div className="text-4xl mb-3">🏫</div>
               <h3 className="text-lg font-bold">No PODs Created Yet</h3>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto mt-1 mb-4">
-                Pods connect Teachers, Proctors, Learners, and Donors together. Create your first POD now!
+                Pods connect Teachers, Proctors, Learners, and Donors together. Create your first
+                POD now!
               </p>
               <button
                 onClick={() => setShowPodModal(true)}
@@ -257,7 +301,10 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
             </div>
           ) : (
             pods.map((pod) => (
-              <div key={pod.id} className="p-6 rounded-3xl bg-card border border-border shadow-soft space-y-4">
+              <div
+                key={pod.id}
+                className="p-6 rounded-3xl bg-card border border-border shadow-soft space-y-4"
+              >
                 <div className="flex items-start justify-between">
                   <div>
                     <span className="inline-block px-2.5 py-0.5 rounded-md bg-muted text-xs font-mono font-bold mb-1">
@@ -280,7 +327,9 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                       <span>🧑‍🏫 Teacher ({pod.teachers.length})</span>
                     </div>
                     {pod.teachers.length === 0 ? (
-                      <span className="text-xs text-muted-foreground italic">No teacher assigned</span>
+                      <span className="text-xs text-muted-foreground italic">
+                        No teacher assigned
+                      </span>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {pod.teachers.map((t) => (
@@ -306,7 +355,9 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                       🛡️ Proctor ({pod.proctors.length})
                     </div>
                     {pod.proctors.length === 0 ? (
-                      <span className="text-xs text-muted-foreground italic">No proctor assigned</span>
+                      <span className="text-xs text-muted-foreground italic">
+                        No proctor assigned
+                      </span>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {pod.proctors.map((p) => (
@@ -332,7 +383,9 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                       🧒 Learners ({pod.students.length})
                     </div>
                     {pod.students.length === 0 ? (
-                      <span className="text-xs text-muted-foreground italic">No learners assigned</span>
+                      <span className="text-xs text-muted-foreground italic">
+                        No learners assigned
+                      </span>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {pod.students.map((s) => (
@@ -402,15 +455,19 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                 {(activeTab === "teachers"
                   ? teachers
                   : activeTab === "students"
-                  ? students
-                  : activeTab === "proctors"
-                  ? proctors
-                  : sponsors
+                    ? students
+                    : activeTab === "proctors"
+                      ? proctors
+                      : sponsors
                 ).map((item, idx) => (
                   <tr key={item.id || idx} className="hover:bg-muted/30 transition-colors">
                     <td className="px-5 py-4 font-bold flex items-center gap-3">
                       {item.image_url ? (
-                        <img src={item.image_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        <img
+                          src={item.image_url}
+                          alt=""
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
                           {item.name?.slice(0, 1) || "U"}
@@ -418,9 +475,12 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                       )}
                       {item.name}
                     </td>
-                    <td className="px-5 py-4 text-muted-foreground">{item.phone || item.email || "—"}</td>
+                    <td className="px-5 py-4 text-muted-foreground">
+                      {item.phone || item.email || "—"}
+                    </td>
                     <td className="px-5 py-4 font-medium">
-                      {item.qualification || (item.standard ? `Class ${item.standard}` : `₹${item.amount || 0}`)}
+                      {item.qualification ||
+                        (item.standard ? `Class ${item.standard}` : `₹${item.amount || 0}`)}
                     </td>
                     {activeTab === "students" && (
                       <td className="px-5 py-4">
@@ -431,7 +491,9 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                               : "bg-amber-500/15 text-amber-600"
                           }`}
                         >
-                          {item.has_app_access !== false ? "Online (App Login)" : "Offline (Proctor Onboarded)"}
+                          {item.has_app_access !== false
+                            ? "Online (App Login)"
+                            : "Offline (Proctor Onboarded)"}
                         </span>
                       </td>
                     )}
@@ -446,7 +508,9 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                       </td>
                     )}
                     <td className="px-5 py-4 text-xs text-muted-foreground">
-                      {new Date(item.created_at || Date.now()).toLocaleDateString("en-IN")}
+                      {item.created_at
+                        ? new Date(item.created_at).toLocaleDateString("en-IN")
+                        : "—"}
                     </td>
                   </tr>
                 ))}

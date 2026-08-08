@@ -7,6 +7,20 @@ interface ProctorDashboardProps {
   user: AuthUser;
 }
 
+interface FeedbackRecord {
+  id: string;
+  student_id: string;
+  student_name?: string;
+  feedback_text: string;
+  rating: number;
+}
+
+interface AttendanceRecord {
+  student_id: string;
+  status: "PRESENT" | "ABSENT" | "EXCUSED";
+  notes?: string;
+}
+
 export function ProctorDashboard({ user }: ProctorDashboardProps) {
   const [pods, setPods] = useState<DetailedPod[]>([]);
   const [selectedPodId, setSelectedPodId] = useState<string>("");
@@ -17,7 +31,7 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
   const [learnerName, setLearnerName] = useState("");
   const [learnerPhone, setLearnerPhone] = useState("");
   const [learnerStandard, setLearnerStandard] = useState("1");
-  const [hasAppAccess, setHasAppAccess] = useState(false); // Default false for offline learners
+  const [hasAppAccess, setHasAppAccess] = useState(false);
 
   // Attendance Tracker State
   const [attendanceDate, setAttendanceDate] = useState<string>(
@@ -33,36 +47,55 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
   const [feedbackStudentId, setFeedbackStudentId] = useState("");
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackRating, setFeedbackRating] = useState(5);
-  const [recentFeedbacks, setRecentFeedbacks] = useState<any[]>([]);
+  const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackRecord[]>([]);
 
-  const [statusMsg, setStatusMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [statusMsg, setStatusMsg] = useState<{ text: string; type: "success" | "error" } | null>(
+    null,
+  );
 
-  const loadProctorPods = async () => {
-    setLoading(true);
+  const reloadProctorPods = async () => {
     try {
       const res = await fetch(`/api/pods?memberId=${user.id}`);
       const data = await res.json();
       const loadedPods: DetailedPod[] = data.pods || [];
 
-      // If proctor is not explicitly in member list (e.g. dev/admin override), fetch all pods
-      if (loadedPods.length === 0) {
-        const allRes = await fetch("/api/pods");
-        const allData = await allRes.json();
-        setPods(allData.pods || []);
-        if (allData.pods?.length > 0) setSelectedPodId(allData.pods[0].id);
-      } else {
-        setPods(loadedPods);
+      setPods(loadedPods);
+      if (loadedPods.length > 0) {
         setSelectedPodId(loadedPods[0].id);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    } catch {
+      // ignore
     }
   };
 
+  // Item 15: Strictly fetch only assigned PODs for the proctor (no fallback to all PODs)
   useEffect(() => {
-    loadProctorPods();
+    let isMounted = true;
+    const fetchPods = async () => {
+      try {
+        const res = await fetch(`/api/pods?memberId=${user.id}`);
+        const data = await res.json();
+        const loadedPods: DetailedPod[] = data.pods || [];
+
+        if (isMounted) {
+          setPods(loadedPods);
+          if (loadedPods.length > 0) {
+            setSelectedPodId(loadedPods[0].id);
+          } else {
+            setSelectedPodId("");
+          }
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchPods();
+    return () => {
+      isMounted = false;
+    };
   }, [user.id]);
 
   const currentPod = pods.find((p) => p.id === selectedPodId);
@@ -70,6 +103,7 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
   // Initialize attendance records when pod or date changes
   useEffect(() => {
     if (!selectedPodId) return;
+    let isMounted = true;
 
     const fetchExistingAttendance = async () => {
       try {
@@ -78,23 +112,23 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
         const initialMap: Record<string, "PRESENT" | "ABSENT" | "EXCUSED"> = {};
         const initialNotes: Record<string, string> = {};
 
-        // Default all learners in pod to PRESENT
         if (currentPod) {
           currentPod.students.forEach((s) => {
             initialMap[s.id] = "PRESENT";
           });
         }
 
-        // Override with existing saved records
-        (data.records || []).forEach((r: any) => {
+        (data.records || []).forEach((r: AttendanceRecord) => {
           initialMap[r.student_id] = r.status;
           if (r.notes) initialNotes[r.student_id] = r.notes;
         });
 
-        setAttendanceMap(initialMap);
-        setAttendanceNotes(initialNotes);
-      } catch (err) {
-        console.error("Failed to load attendance", err);
+        if (isMounted) {
+          setAttendanceMap(initialMap);
+          setAttendanceNotes(initialNotes);
+        }
+      } catch {
+        // ignore
       }
     };
 
@@ -102,17 +136,22 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
       try {
         const res = await fetch(`/api/feedback?podId=${selectedPodId}`);
         const data = await res.json();
-        setRecentFeedbacks(data.feedbacks || []);
-      } catch (err) {
-        console.error(err);
+        if (isMounted) {
+          setRecentFeedbacks(data.feedbacks || []);
+        }
+      } catch {
+        // ignore
       }
     };
 
     fetchExistingAttendance();
     fetchFeedbacks();
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedPodId, attendanceDate, currentPod]);
 
-  // Handle Offline Learner Onboarding
   const handleOnboardLearner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPodId) return;
@@ -140,7 +179,7 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
       setShowOnboardModal(false);
       setLearnerName("");
       setLearnerPhone("");
-      loadProctorPods();
+      reloadProctorPods();
     } catch (err) {
       setStatusMsg({
         text: err instanceof Error ? err.message : "Onboarding failed",
@@ -149,7 +188,6 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
     }
   };
 
-  // Save Daily Attendance Matrix
   const handleSaveAttendance = async () => {
     if (!selectedPodId || !currentPod) return;
     setSavingAttendance(true);
@@ -166,7 +204,6 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           pod_id: selectedPodId,
-          proctor_id: user.id,
           date: attendanceDate,
           records: recordsToSave,
         }),
@@ -174,15 +211,17 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
 
       if (!res.ok) throw new Error("Failed to save attendance");
 
-      setStatusMsg({ text: `Attendance for ${attendanceDate} saved successfully!`, type: "success" });
-    } catch (err) {
+      setStatusMsg({
+        text: `Attendance for ${attendanceDate} saved successfully!`,
+        type: "success",
+      });
+    } catch {
       setStatusMsg({ text: "Failed to save attendance", type: "error" });
     } finally {
       setSavingAttendance(false);
     }
   };
 
-  // Submit Learner Feedback
   const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPodId || !feedbackStudentId || !feedbackText) return;
@@ -194,8 +233,6 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
         body: JSON.stringify({
           pod_id: selectedPodId,
           student_id: feedbackStudentId,
-          author_id: user.id,
-          author_role: "proctor",
           feedback_text: feedbackText,
           rating: feedbackRating,
         }),
@@ -207,11 +244,10 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
       setFeedbackText("");
       setFeedbackStudentId("");
 
-      // Reload feedback
       const fbRes = await fetch(`/api/feedback?podId=${selectedPodId}`);
       const fbData = await fbRes.json();
       setRecentFeedbacks(fbData.feedbacks || []);
-    } catch (err) {
+    } catch {
       setStatusMsg({ text: "Failed to submit feedback", type: "error" });
     }
   };
@@ -230,7 +266,6 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
           </p>
         </div>
 
-        {/* POD Selector */}
         {pods.length > 0 && (
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <select
@@ -263,7 +298,10 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
           }`}
         >
           <span>{statusMsg.text}</span>
-          <button onClick={() => setStatusMsg(null)} className="text-xs opacity-70 hover:opacity-100">
+          <button
+            onClick={() => setStatusMsg(null)}
+            className="text-xs opacity-70 hover:opacity-100"
+          >
             ✕
           </button>
         </div>
@@ -281,14 +319,14 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
         </div>
       ) : (
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Column: Attendance Tracker Matrix */}
           <div className="lg:col-span-2 space-y-6">
             <div className="p-6 rounded-3xl bg-card border border-border shadow-soft space-y-5">
               <div className="flex items-center justify-between pb-4 border-b border-border">
                 <div>
                   <h3 className="text-lg font-bold font-display">Daily Attendance Tracker</h3>
                   <p className="text-xs text-muted-foreground">
-                    Mark presence for learners in <strong className="text-foreground">{currentPod.name}</strong>
+                    Mark presence for learners in{" "}
+                    <strong className="text-foreground">{currentPod.name}</strong>
                   </p>
                 </div>
                 <input
@@ -301,7 +339,8 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
 
               {currentPod.students.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  No learners in this POD yet. Click <strong>+ Onboard Learner</strong> to add students!
+                  No learners in this POD yet. Click <strong>+ Onboard Learner</strong> to add
+                  students!
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -332,7 +371,6 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
                         </div>
                       </div>
 
-                      {/* Status Toggle Buttons */}
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         {(["PRESENT", "ABSENT", "EXCUSED"] as const).map((status) => (
                           <button
@@ -349,8 +387,8 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
                                 ? status === "PRESENT"
                                   ? "bg-accent text-accent-foreground shadow-soft"
                                   : status === "ABSENT"
-                                  ? "bg-destructive text-destructive-foreground shadow-soft"
-                                  : "bg-amber-500 text-white shadow-soft"
+                                    ? "bg-destructive text-destructive-foreground shadow-soft"
+                                    : "bg-amber-500 text-white shadow-soft"
                                 : "bg-card text-muted-foreground border border-border hover:bg-muted"
                             }`}
                           >
@@ -377,9 +415,7 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
             </div>
           </div>
 
-          {/* Sidebar: Feedback Log & Onboard trigger */}
           <div className="space-y-6">
-            {/* Submit Feedback Card */}
             <form
               onSubmit={handleSubmitFeedback}
               className="p-6 rounded-3xl bg-card border border-border shadow-soft space-y-4"
@@ -440,24 +476,25 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
               </button>
             </form>
 
-            {/* Recent Feedbacks List */}
             <div className="p-6 rounded-3xl bg-card border border-border shadow-soft space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Recent Feedback Logs
               </h4>
               {recentFeedbacks.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">No feedback logged yet for this POD.</p>
+                <p className="text-xs text-muted-foreground italic">
+                  No feedback logged yet for this POD.
+                </p>
               ) : (
                 recentFeedbacks.slice(0, 4).map((f) => (
-                  <div key={f.id} className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1">
+                  <div
+                    key={f.id}
+                    className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1"
+                  >
                     <div className="flex items-center justify-between text-xs font-bold">
                       <span>{f.student_name}</span>
                       <span className="text-amber-500">{"⭐".repeat(f.rating || 5)}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">{f.feedback_text}</p>
-                    <div className="text-[10px] text-muted-foreground/70 text-right">
-                      {new Date(f.created_at).toLocaleDateString("en-IN")}
-                    </div>
                   </div>
                 ))
               )}
@@ -466,7 +503,6 @@ export function ProctorDashboard({ user }: ProctorDashboardProps) {
         </div>
       )}
 
-      {/* Modal: Offline Learner Onboarding */}
       {showOnboardModal && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
           <form

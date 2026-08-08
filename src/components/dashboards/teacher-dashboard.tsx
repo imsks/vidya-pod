@@ -7,6 +7,14 @@ interface TeacherDashboardProps {
   user: AuthUser;
 }
 
+interface FeedbackRecord {
+  id: string;
+  student_id: string;
+  student_name?: string;
+  feedback_text: string;
+  rating: number;
+}
+
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
   const [pods, setPods] = useState<DetailedPod[]>([]);
   const [selectedPodId, setSelectedPodId] = useState<string>("");
@@ -16,50 +24,63 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
   const [studentId, setStudentId] = useState("");
   const [feedbackText, setFeedbackText] = useState("");
   const [rating, setRating] = useState(5);
-  const [recentFeedbacks, setRecentFeedbacks] = useState<any[]>([]);
-  const [statusMsg, setStatusMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackRecord[]>([]);
+  const [statusMsg, setStatusMsg] = useState<{ text: string; type: "success" | "error" } | null>(
+    null,
+  );
 
-  const loadTeacherPods = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/pods?memberId=${user.id}`);
-      const data = await res.json();
-      const loadedPods: DetailedPod[] = data.pods || [];
-
-      if (loadedPods.length === 0) {
-        const allRes = await fetch("/api/pods");
-        const allData = await allRes.json();
-        setPods(allData.pods || []);
-        if (allData.pods?.length > 0) setSelectedPodId(allData.pods[0].id);
-      } else {
-        setPods(loadedPods);
-        setSelectedPodId(loadedPods[0].id);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Item 16: Strictly fetch only assigned PODs for the teacher (no fallback to all PODs)
   useEffect(() => {
-    loadTeacherPods();
+    let isMounted = true;
+    const fetchPods = async () => {
+      try {
+        const res = await fetch(`/api/pods?memberId=${user.id}`);
+        const data = await res.json();
+        const loadedPods: DetailedPod[] = data.pods || [];
+
+        if (isMounted) {
+          setPods(loadedPods);
+          if (loadedPods.length > 0) {
+            setSelectedPodId(loadedPods[0].id);
+          } else {
+            setSelectedPodId("");
+          }
+        }
+      } catch {
+        // error handling
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchPods();
+    return () => {
+      isMounted = false;
+    };
   }, [user.id]);
 
   const currentPod = pods.find((p) => p.id === selectedPodId);
 
   useEffect(() => {
     if (!selectedPodId) return;
+    let isMounted = true;
+
     const fetchFeedbacks = async () => {
       try {
         const res = await fetch(`/api/feedback?podId=${selectedPodId}`);
         const data = await res.json();
-        setRecentFeedbacks(data.feedbacks || []);
-      } catch (err) {
-        console.error(err);
+        if (isMounted) {
+          setRecentFeedbacks(data.feedbacks || []);
+        }
+      } catch {
+        // ignore
       }
     };
     fetchFeedbacks();
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedPodId]);
 
   const handleSubmitFeedback = async (e: React.FormEvent) => {
@@ -73,8 +94,6 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
         body: JSON.stringify({
           pod_id: selectedPodId,
           student_id: studentId,
-          author_id: user.id,
-          author_role: "teacher",
           feedback_text: feedbackText,
           rating,
         }),
@@ -89,7 +108,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
       const fbRes = await fetch(`/api/feedback?podId=${selectedPodId}`);
       const fbData = await fbRes.json();
       setRecentFeedbacks(fbData.feedbacks || []);
-    } catch (err) {
+    } catch {
       setStatusMsg({ text: "Failed to save note", type: "error" });
     }
   };
@@ -102,7 +121,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-1">
             Teacher Portal — {user.name}
           </div>
-          <h2 className="text-2xl font-black font-display font-display">Assigned PODs & Academic Progress</h2>
+          <h2 className="text-2xl font-black font-display">Assigned PODs & Academic Progress</h2>
           <p className="text-sm text-muted-foreground">
             Track student learning rosters, submit academic notes, and view feedback.
           </p>
@@ -132,7 +151,10 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           }`}
         >
           <span>{statusMsg.text}</span>
-          <button onClick={() => setStatusMsg(null)} className="text-xs opacity-70 hover:opacity-100">
+          <button
+            onClick={() => setStatusMsg(null)}
+            className="text-xs opacity-70 hover:opacity-100"
+          >
             ✕
           </button>
         </div>
@@ -150,7 +172,6 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
         </div>
       ) : (
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Roster & Students */}
           <div className="lg:col-span-2 space-y-6">
             <div className="p-6 rounded-3xl bg-card border border-border shadow-soft space-y-5">
               <h3 className="text-lg font-bold font-display flex items-center justify-between border-b border-border pb-3">
@@ -176,7 +197,9 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                       </div>
                       <div>
                         <div className="font-bold text-sm">{student.name}</div>
-                        <div className="text-xs text-muted-foreground">Standard / Class {student.standard}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Standard / Class {student.standard}
+                        </div>
                         {student.hasAppAccess === false && (
                           <div className="text-[10px] text-amber-600 font-bold mt-0.5">
                             Offline Learner Profile
@@ -190,7 +213,6 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
             </div>
           </div>
 
-          {/* Feedback & Academic Notes Form */}
           <div className="space-y-6">
             <form
               onSubmit={handleSubmitFeedback}
@@ -228,6 +250,8 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                   <option value={4}>⭐⭐⭐⭐ (4 - Good Progress)</option>
                   <option value={3}>⭐⭐⭐ (3 - Steady)</option>
                   <option value={2}>⭐⭐ (2 - Needs Support)</option>
+                  {/* Item 22: Added missing Rating 1 option */}
+                  <option value={1}>⭐ (1 - Critical)</option>
                 </select>
               </div>
 
@@ -259,7 +283,10 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 <p className="text-xs text-muted-foreground italic">No feedback logged yet.</p>
               ) : (
                 recentFeedbacks.slice(0, 4).map((f) => (
-                  <div key={f.id} className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1">
+                  <div
+                    key={f.id}
+                    className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1"
+                  >
                     <div className="flex items-center justify-between text-xs font-bold">
                       <span>{f.student_name}</span>
                       <span className="text-amber-500">{"⭐".repeat(f.rating || 5)}</span>

@@ -1,21 +1,36 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { AuthUser } from "@/types/rbac";
+import { AuthUser, DetailedPod } from "@/types/rbac";
 
 interface LearnerDashboardProps {
   user: AuthUser;
 }
 
+interface AttendanceRecord {
+  id: string;
+  date: string;
+  status: "PRESENT" | "ABSENT" | "EXCUSED";
+  notes?: string;
+}
+
+interface FeedbackRecord {
+  id: string;
+  author_role: string;
+  feedback_text: string;
+  rating: number;
+  created_at: string;
+}
+
 export function LearnerDashboard({ user }: LearnerDashboardProps) {
-  const [attendance, setAttendance] = useState<any[]>([]);
-  const [feedbacks, setFeedbacks] = useState<any[]>([]);
-  const [podInfo, setPodInfo] = useState<any>(null);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [feedbacks, setFeedbacks] = useState<FeedbackRecord[]>([]);
+  const [podInfo, setPodInfo] = useState<DetailedPod | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const loadLearnerData = async () => {
-      setLoading(true);
       try {
         const [attRes, fbRes, podRes] = await Promise.all([
           fetch(`/api/attendance?studentId=${user.id}`),
@@ -27,19 +42,24 @@ export function LearnerDashboard({ user }: LearnerDashboardProps) {
         const fbData = await fbRes.json();
         const podData = await podRes.json();
 
-        setAttendance(attData.records || []);
-        setFeedbacks(fbData.feedbacks || []);
-        if (podData.pods && podData.pods.length > 0) {
-          setPodInfo(podData.pods[0]);
+        if (isMounted) {
+          setAttendance(attData.records || []);
+          setFeedbacks(fbData.feedbacks || []);
+          if (podData.pods && podData.pods.length > 0) {
+            setPodInfo(podData.pods[0]);
+          }
         }
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // ignore
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadLearnerData();
+    return () => {
+      isMounted = false;
+    };
   }, [user.id]);
 
   const presentCount = attendance.filter((a) => a.status === "PRESENT").length;
@@ -63,7 +83,9 @@ export function LearnerDashboard({ user }: LearnerDashboardProps) {
         <div className="p-4 rounded-2xl bg-muted/50 border border-border flex items-center gap-4">
           <div>
             <div className="text-xs font-bold text-muted-foreground uppercase">Attendance Rate</div>
-            <div className="text-2xl font-black font-display text-primary">{attendancePercentage}%</div>
+            <div className="text-2xl font-black font-display text-primary">
+              {attendancePercentage}%
+            </div>
           </div>
           <div className="text-3xl">🎓</div>
         </div>
@@ -121,7 +143,9 @@ export function LearnerDashboard({ user }: LearnerDashboardProps) {
             <div className="p-6 rounded-3xl bg-card border border-border shadow-soft space-y-4">
               <h3 className="text-base font-bold font-display">📅 Recent Attendance History</h3>
               {attendance.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">No attendance records logged yet.</p>
+                <p className="text-xs text-muted-foreground italic">
+                  No attendance records logged yet.
+                </p>
               ) : (
                 <div className="space-y-2">
                   {attendance.slice(0, 5).map((rec) => (
@@ -135,8 +159,8 @@ export function LearnerDashboard({ user }: LearnerDashboardProps) {
                           rec.status === "PRESENT"
                             ? "bg-accent/20 text-accent"
                             : rec.status === "ABSENT"
-                            ? "bg-destructive/20 text-destructive"
-                            : "bg-amber-500/20 text-amber-600"
+                              ? "bg-destructive/20 text-destructive"
+                              : "bg-amber-500/20 text-amber-600"
                         }`}
                       >
                         {rec.status}
@@ -153,20 +177,23 @@ export function LearnerDashboard({ user }: LearnerDashboardProps) {
             <div className="p-6 rounded-3xl bg-card border border-border shadow-soft space-y-4">
               <h3 className="text-base font-bold font-display">📝 Progress & Feedback Notes</h3>
               {feedbacks.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">No teacher/proctor notes available yet.</p>
+                <p className="text-xs text-muted-foreground italic">
+                  No teacher/proctor notes available yet.
+                </p>
               ) : (
                 <div className="space-y-3">
                   {feedbacks.map((f) => (
-                    <div key={f.id} className="p-4 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
+                    <div
+                      key={f.id}
+                      className="p-4 rounded-2xl bg-muted/40 border border-border/60 space-y-1"
+                    >
                       <div className="flex items-center justify-between text-xs font-bold">
-                        <span className="capitalize text-primary">
-                          {f.author_role} Feedback
-                        </span>
+                        <span className="capitalize text-primary">{f.author_role} Feedback</span>
                         <span className="text-amber-500">{"⭐".repeat(f.rating || 5)}</span>
                       </div>
                       <p className="text-xs text-foreground mt-1">{f.feedback_text}</p>
                       <div className="text-[10px] text-muted-foreground text-right mt-1">
-                        {new Date(f.created_at).toLocaleDateString("en-IN")}
+                        {f.created_at ? new Date(f.created_at).toLocaleDateString("en-IN") : "—"}
                       </div>
                     </div>
                   ))}
