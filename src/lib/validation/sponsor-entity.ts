@@ -8,7 +8,7 @@ export const sponsorEntitySchema = z.object({
   email: z.string().trim().email("Valid email is required"),
   phone: z.string().trim().min(1, "Phone is required"),
   organization: z.string().trim().optional().nullable(),
-  image_url: z.string().url().optional().or(z.literal("")).optional(),
+  image_url: z.string().url().or(z.literal("")).optional(),
 });
 
 export type SponsorEntityInput = z.infer<typeof sponsorEntitySchema>;

@@ -7,7 +7,7 @@ export const learnerSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   phone: z.string().trim().min(1, "Phone is required"),
   standard: z.string().trim().min(1, "Standard is required"),
-  image_url: z.string().url().optional().or(z.literal("")).optional(),
+  image_url: z.string().url().or(z.literal("")).optional(),
   sponsor_id: z.string().uuid().optional().nullable(),
 });
 
