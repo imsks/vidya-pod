@@ -1,58 +1,44 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
+import { getRegisterTable, parseRegisterBody } from "@/lib/validation/register";
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabase();
-    
     const body = await request.json();
-    const { role, name, phone, qualification, standard, image_url } = body;
+    const parsed = parseRegisterBody(body);
 
-    if (!role || !name || !phone) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: parsed.status });
     }
 
-    if (!["teacher", "student", "proctor"].includes(role)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
-    }
+    const supabase = getSupabase();
+    const { role, name, phone, image_url } = parsed.data;
 
     let result;
-
     if (role === "student") {
-      if (!standard) {
-        return NextResponse.json(
-          { error: "Standard is required for students" },
-          { status: 400 },
-        );
-      }
-      result = await supabase.from("students").insert({ name, phone, standard, image_url });
+      result = await supabase.from("students").insert({
+        name,
+        phone,
+        standard: parsed.data.standard,
+        image_url: image_url || null,
+      });
     } else {
-      if (!qualification) {
-        return NextResponse.json(
-          { error: "Qualification is required" },
-          { status: 400 },
-        );
-      }
-      const table = role === "teacher" ? "teachers" : "proctors";
-      result = await supabase.from(table).insert({ name, phone, qualification, image_url });
+      const table = getRegisterTable(role);
+      result = await supabase.from(table).insert({
+        name,
+        phone,
+        qualification: parsed.data.qualification,
+        image_url: image_url || null,
+      });
     }
 
     if (result.error) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: result.error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch(e) {
-    console.error("Error in register route:", e);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+  } catch (error) {
+    console.error("Error in register route:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

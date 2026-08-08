@@ -13,8 +13,15 @@ export default defineConfig({
     exclude: ["tests/e2e/**", "node_modules/**"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "html"],
-      include: ["src/**/*.{ts,tsx}"],
+      reporter: ["text", "html", "lcov"],
+      include: ["src/lib/**/*.{ts,tsx}", "src/constants/**/*.{ts,tsx}"],
+      exclude: ["src/lib/supabase.ts"],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
     },
   },
   resolve: {
