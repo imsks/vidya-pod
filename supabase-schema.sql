@@ -13,11 +13,6 @@ CREATE TABLE IF NOT EXISTS admins (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Seed default admin if not existing
-INSERT INTO admins (username, password, name)
-VALUES ('sachin', 'sachin', 'Sachin Admin')
-ON CONFLICT (username) DO NOTHING;
-
 -- -------------------------------------------------------------
 -- 2. Teachers Table
 -- -------------------------------------------------------------
@@ -137,7 +132,7 @@ CREATE TABLE IF NOT EXISTS learner_feedbacks (
 );
 
 -- -------------------------------------------------------------
--- Enable RLS & Set Policies
+-- Enable RLS & Set Explicit Operation Policies
 -- -------------------------------------------------------------
 ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teachers ENABLE ROW LEVEL SECURITY;
@@ -149,25 +144,42 @@ ALTER TABLE pod_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE learner_feedbacks ENABLE ROW LEVEL SECURITY;
 
--- Note: In production with server-side API routes, RLS policies allow server-side operations via Supabase client.
-CREATE POLICY "Allow public select admins" ON admins FOR SELECT USING (true);
-CREATE POLICY "Allow public insert teachers" ON teachers FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public select teachers" ON teachers FOR SELECT USING (true);
-CREATE POLICY "Allow public update teachers" ON teachers FOR UPDATE USING (true);
+-- Teachers
+CREATE POLICY "Allow select teachers" ON teachers FOR SELECT USING (true);
+CREATE POLICY "Allow insert teachers" ON teachers FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update teachers" ON teachers FOR UPDATE USING (true);
 
-CREATE POLICY "Allow public insert students" ON students FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public select students" ON students FOR SELECT USING (true);
-CREATE POLICY "Allow public update students" ON students FOR UPDATE USING (true);
+-- Students
+CREATE POLICY "Allow select students" ON students FOR SELECT USING (true);
+CREATE POLICY "Allow insert students" ON students FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update students" ON students FOR UPDATE USING (true);
 
-CREATE POLICY "Allow public insert proctors" ON proctors FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public select proctors" ON proctors FOR SELECT USING (true);
-CREATE POLICY "Allow public update proctors" ON proctors FOR UPDATE USING (true);
+-- Proctors
+CREATE POLICY "Allow select proctors" ON proctors FOR SELECT USING (true);
+CREATE POLICY "Allow insert proctors" ON proctors FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update proctors" ON proctors FOR UPDATE USING (true);
 
-CREATE POLICY "Allow public insert sponsor_orders" ON sponsor_orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public select sponsor_orders" ON sponsor_orders FOR SELECT USING (true);
-CREATE POLICY "Allow public update sponsor_orders" ON sponsor_orders FOR UPDATE USING (true);
+-- Sponsors / Orders
+CREATE POLICY "Allow select sponsor_orders" ON sponsor_orders FOR SELECT USING (true);
+CREATE POLICY "Allow insert sponsor_orders" ON sponsor_orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update sponsor_orders" ON sponsor_orders FOR UPDATE USING (true);
 
-CREATE POLICY "Allow public all pods" ON pods FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public all pod_memberships" ON pod_memberships FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public all attendance_records" ON attendance_records FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public all learner_feedbacks" ON learner_feedbacks FOR ALL USING (true) WITH CHECK (true);
+-- Pods & Memberships
+CREATE POLICY "Allow select pods" ON pods FOR SELECT USING (true);
+CREATE POLICY "Allow insert pods" ON pods FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update pods" ON pods FOR UPDATE USING (true);
+CREATE POLICY "Allow delete pods" ON pods FOR DELETE USING (true);
+
+CREATE POLICY "Allow select pod_memberships" ON pod_memberships FOR SELECT USING (true);
+CREATE POLICY "Allow insert pod_memberships" ON pod_memberships FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update pod_memberships" ON pod_memberships FOR UPDATE USING (true);
+CREATE POLICY "Allow delete pod_memberships" ON pod_memberships FOR DELETE USING (true);
+
+-- Attendance & Feedback
+CREATE POLICY "Allow select attendance_records" ON attendance_records FOR SELECT USING (true);
+CREATE POLICY "Allow insert attendance_records" ON attendance_records FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update attendance_records" ON attendance_records FOR UPDATE USING (true);
+
+CREATE POLICY "Allow select learner_feedbacks" ON learner_feedbacks FOR SELECT USING (true);
+CREATE POLICY "Allow insert learner_feedbacks" ON learner_feedbacks FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow update learner_feedbacks" ON learner_feedbacks FOR UPDATE USING (true);
