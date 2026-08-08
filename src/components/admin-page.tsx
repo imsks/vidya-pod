@@ -2,11 +2,20 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import type {
+  AdminDashboardData,
+  ProctorRecord,
+  SponsorOrderRecord,
+  StudentRecord,
+  TeacherRecord,
+} from "@/types/admin";
 
 const ADMIN_ID = "sachin";
 const ADMIN_PASSWORD = "sachin";
 
 type Tab = "teachers" | "students" | "proctors" | "sponsors";
+
+const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateString("en-IN") : "—");
 
 export function AdminPage() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -15,10 +24,10 @@ export function AdminPage() {
   const [loginError, setLoginError] = useState("");
 
   const [activeTab, setActiveTab] = useState<Tab>("teachers");
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
-  const [proctors, setProctors] = useState<any[]>([]);
-  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
+  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [proctors, setProctors] = useState<ProctorRecord[]>([]);
+  const [sponsors, setSponsors] = useState<SponsorOrderRecord[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -38,7 +47,7 @@ export function AdminPage() {
       try {
         const res = await fetch("/api/admin");
         if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
+        const data = (await res.json()) as AdminDashboardData;
         setTeachers(data.teachers ?? []);
         setStudents(data.students ?? []);
         setProctors(data.proctors ?? []);
@@ -63,12 +72,8 @@ export function AdminPage() {
             <div className="w-14 h-14 mx-auto rounded-xl bg-gradient-hero flex items-center justify-center text-2xl shadow-glow">
               🔐
             </div>
-            <h1 className="mt-4 text-2xl font-black font-display">
-              Admin Login
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Vidya Pods Admin Panel
-            </p>
+            <h1 className="mt-4 text-2xl font-black font-display">Admin Login</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Vidya Pods Admin Panel</p>
           </div>
 
           <div>
@@ -130,9 +135,7 @@ export function AdminPage() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="inline-block w-8 h-8 rounded-xl bg-gradient-hero shadow-glow" />
-            <span className="font-display font-bold text-xl">
-              Vidya Pods Admin
-            </span>
+            <span className="font-display font-bold text-xl">Vidya Pods Admin</span>
           </div>
           <div className="flex items-center gap-4">
             <Link
@@ -154,14 +157,9 @@ export function AdminPage() {
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           {tabs.map((t) => (
-            <div
-              key={t.key}
-              className="p-5 rounded-2xl bg-card border border-border shadow-soft"
-            >
+            <div key={t.key} className="p-5 rounded-2xl bg-card border border-border shadow-soft">
               <div className="text-2xl">{t.icon}</div>
-              <div className="mt-2 text-3xl font-black font-display">
-                {t.count}
-              </div>
+              <div className="mt-2 text-3xl font-black font-display">{t.count}</div>
               <div className="text-sm text-muted-foreground">{t.label}</div>
             </div>
           ))}
@@ -184,9 +182,7 @@ export function AdminPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-20 text-muted-foreground">
-            Loading...
-          </div>
+          <div className="text-center py-20 text-muted-foreground">Loading...</div>
         ) : (
           <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
             {activeTab === "teachers" && (
@@ -196,8 +192,8 @@ export function AdminPage() {
                   t.image_url || "",
                   t.name,
                   t.phone,
-                  t.qualification,
-                  new Date(t.created_at).toLocaleDateString("en-IN"),
+                  t.qualification ?? "—",
+                  formatDate(t.created_at),
                 ])}
                 imageColumn={0}
                 emptyMsg="No teachers registered yet"
@@ -210,8 +206,8 @@ export function AdminPage() {
                   s.image_url || "",
                   s.name,
                   s.phone,
-                  `Class ${s.standard}`,
-                  new Date(s.created_at).toLocaleDateString("en-IN"),
+                  `Class ${s.standard ?? "—"}`,
+                  formatDate(s.created_at),
                 ])}
                 imageColumn={0}
                 emptyMsg="No students registered yet"
@@ -224,8 +220,8 @@ export function AdminPage() {
                   p.image_url || "",
                   p.name,
                   p.phone,
-                  p.qualification,
-                  new Date(p.created_at).toLocaleDateString("en-IN"),
+                  p.qualification ?? "—",
+                  formatDate(p.created_at),
                 ])}
                 imageColumn={0}
                 emptyMsg="No proctors registered yet"
@@ -233,15 +229,7 @@ export function AdminPage() {
             )}
             {activeTab === "sponsors" && (
               <DataTable
-                columns={[
-                  "Name",
-                  "Email",
-                  "Phone",
-                  "Plan",
-                  "Amount",
-                  "Status",
-                  "Date",
-                ]}
+                columns={["Name", "Email", "Phone", "Plan", "Amount", "Status", "Date"]}
                 rows={sponsors.map((s) => [
                   s.name,
                   s.email,
@@ -249,7 +237,7 @@ export function AdminPage() {
                   s.plan,
                   `₹${s.amount}`,
                   s.status,
-                  new Date(s.created_at).toLocaleDateString("en-IN"),
+                  formatDate(s.created_at),
                 ])}
                 emptyMsg="No sponsor orders yet"
               />
@@ -273,9 +261,7 @@ function DataTable({
   imageColumn?: number;
 }) {
   if (rows.length === 0) {
-    return (
-      <div className="text-center py-16 text-muted-foreground">{emptyMsg}</div>
-    );
+    return <div className="text-center py-16 text-muted-foreground">{emptyMsg}</div>;
   }
 
   return (
@@ -295,19 +281,12 @@ function DataTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr
-              key={i}
-              className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-            >
+            <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
               {row.map((cell, j) => (
                 <td key={j} className="px-5 py-4">
                   {imageColumn === j ? (
                     cell ? (
-                      <img
-                        src={cell}
-                        alt=""
-                        className="w-9 h-9 rounded-full object-cover"
-                      />
+                      <img src={cell} alt="" className="w-9 h-9 rounded-full object-cover" />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
                         —

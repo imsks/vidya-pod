@@ -5,14 +5,31 @@ import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { PRICING, type PlanType } from "@/constants/pricing";
 
+type CashfreeMode = "sandbox" | "production";
+
+interface CashfreeCheckout {
+  checkout: (opts: { paymentSessionId: string; redirectTarget: string }) => void;
+}
+
+interface CashfreeFactory {
+  (opts: { mode: CashfreeMode }): CashfreeCheckout;
+}
+
+const getCashfreeFactory = (): CashfreeFactory | undefined => {
+  if (typeof window === "undefined") return undefined;
+  return (window as Window & { Cashfree?: CashfreeFactory }).Cashfree;
+};
+
 function useCashfreeSDK() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (document.getElementById("cashfree-sdk")) {
-      setLoaded(true);
-      return;
+    const existing = document.getElementById("cashfree-sdk");
+    if (existing) {
+      const timer = window.setTimeout(() => setLoaded(true), 0);
+      return () => window.clearTimeout(timer);
     }
+
     const script = document.createElement("script");
     script.id = "cashfree-sdk";
     script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
@@ -22,9 +39,11 @@ function useCashfreeSDK() {
 
   const launchPayment = useCallback(
     (paymentSessionId: string) => {
-      if (!loaded || !(window as any).Cashfree) return;
-      const mode = process.env.NEXT_PUBLIC_CASHFREE_MODE === "production" ? "production" : "sandbox";
-      const cashfree = (window as any).Cashfree({ mode });
+      const Cashfree = getCashfreeFactory();
+      if (!loaded || !Cashfree) return;
+      const mode: CashfreeMode =
+        process.env.NEXT_PUBLIC_CASHFREE_MODE === "production" ? "production" : "sandbox";
+      const cashfree = Cashfree({ mode });
       cashfree.checkout({ paymentSessionId, redirectTarget: "_self" });
     },
     [loaded],
@@ -102,10 +121,7 @@ export function SponsorPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/70 border-b border-border/60">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-display font-bold text-xl"
-          >
+          <Link href="/" className="flex items-center gap-2 font-display font-bold text-xl">
             <span className="inline-block w-8 h-8 rounded-xl bg-gradient-hero shadow-glow" />
             Vidya Pods
           </Link>
@@ -118,12 +134,11 @@ export function SponsorPage() {
             Sponsor a Pod
           </div>
           <h1 className="mt-3 text-4xl md:text-5xl font-black font-display">
-            Fund a pod.{" "}
-            <span className="text-gradient">Fuel a generation.</span>
+            Fund a pod. <span className="text-gradient">Fuel a generation.</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Every rupee goes directly to teachers, books, stationery, and kids.
-            Choose your plan below.
+            Every rupee goes directly to teachers, books, stationery, and kids. Choose your plan
+            below.
           </p>
         </div>
 
@@ -140,11 +155,7 @@ export function SponsorPage() {
                 }`}
               >
                 {p}
-                {p === "yearly" && (
-                  <span className="ml-2 text-xs text-accent">
-                    Save ₹6,000
-                  </span>
-                )}
+                {p === "yearly" && <span className="ml-2 text-xs text-accent">Save ₹6,000</span>}
               </button>
             ))}
           </div>
@@ -162,9 +173,7 @@ export function SponsorPage() {
                   className="flex items-center justify-between py-2 border-b border-border/50"
                 >
                   <span className="text-muted-foreground">{item.label}</span>
-                  <span className="font-semibold">
-                    ₹{item.amount.toLocaleString("en-IN")}
-                  </span>
+                  <span className="font-semibold">₹{item.amount.toLocaleString("en-IN")}</span>
                 </div>
               ))}
               <div className="flex items-center justify-between pt-2">
@@ -186,9 +195,7 @@ export function SponsorPage() {
             <h2 className="text-xl font-bold">Your Details</h2>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Full Name
-              </label>
+              <label className="block text-sm font-medium mb-2">Full Name</label>
               <input
                 type="text"
                 required
@@ -212,9 +219,7 @@ export function SponsorPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Phone Number
-              </label>
+              <label className="block text-sm font-medium mb-2">Phone Number</label>
               <input
                 type="tel"
                 required
@@ -237,9 +242,7 @@ export function SponsorPage() {
               disabled={loading || !cashfreeLoaded}
               className="w-full rounded-xl bg-gradient-hero text-primary-foreground px-6 py-4 font-bold shadow-glow hover:shadow-lift transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading
-                ? "Processing..."
-                : `Pay ₹${pricing.total.toLocaleString("en-IN")} →`}
+              {loading ? "Processing..." : `Pay ₹${pricing.total.toLocaleString("en-IN")} →`}
             </button>
 
             <p className="text-xs text-center text-muted-foreground">

@@ -31,8 +31,8 @@ out
 .env
 .env.production
 
-# Test artifacts
+# Testing
 coverage/
 playwright-report/
 test-results/
-*.tsbuildinfo
+tsconfig.tsbuildinfo

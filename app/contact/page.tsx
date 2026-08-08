@@ -10,10 +10,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/70 border-b border-border/60">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-display font-bold text-xl"
-          >
+          <Link href="/" className="flex items-center gap-2 font-display font-bold text-xl">
             <span className="inline-block w-8 h-8 rounded-xl bg-gradient-hero shadow-glow" />
             Vidya Pods
           </Link>
@@ -23,8 +20,7 @@ export default function ContactPage() {
       <main className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-4xl font-black font-display">Contact Us</h1>
         <p className="mt-4 text-muted-foreground">
-          We&apos;d love to hear from you. Reach out to us for any queries,
-          feedback, or support.
+          We&apos;d love to hear from you. Reach out to us for any queries, feedback, or support.
         </p>
 
         <div className="mt-10 space-y-6">
@@ -51,12 +47,8 @@ export default function ContactPage() {
 
           <div className="p-6 rounded-2xl bg-card border border-border">
             <h2 className="text-lg font-bold">Organization</h2>
-            <p className="mt-2 text-muted-foreground">
-              The Boring Education
-            </p>
-            <p className="mt-1 text-muted-foreground">
-              India
-            </p>
+            <p className="mt-2 text-muted-foreground">The Boring Education</p>
+            <p className="mt-1 text-muted-foreground">India</p>
           </div>
 
           <div className="p-6 rounded-2xl bg-card border border-border">

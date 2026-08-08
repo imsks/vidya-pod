@@ -21,12 +21,12 @@ npm install
 cp .env.example .env.local
 ```
 
-| Variable | Where to get it |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Dashboard → Project Settings → API → Project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Same page → publishable / anon key |
-| `CASHFREE_*` | Cashfree merchant dashboard (sandbox for local) |
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` for local dev |
+| Variable                               | Where to get it                                           |
+| -------------------------------------- | --------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase Dashboard → Project Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Same page → publishable / anon key                        |
+| `CASHFREE_*`                           | Cashfree merchant dashboard (sandbox for local)           |
+| `NEXT_PUBLIC_APP_URL`                  | `http://localhost:3000` for local dev                     |
 
 3. Run the app:
 
@@ -70,11 +70,11 @@ supabase start
 
 On success the CLI prints local URLs and keys. Typical defaults:
 
-| Service | URL |
-|---|---|
-| API (use as `NEXT_PUBLIC_SUPABASE_URL`) | `http://127.0.0.1:54321` |
-| Studio (DB UI) | [http://127.0.0.1:54323](http://127.0.0.1:54323) |
-| Postgres | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| Service                                 | URL                                                       |
+| --------------------------------------- | --------------------------------------------------------- |
+| API (use as `NEXT_PUBLIC_SUPABASE_URL`) | `http://127.0.0.1:54321`                                  |
+| Studio (DB UI)                          | [http://127.0.0.1:54323](http://127.0.0.1:54323)          |
+| Postgres                                | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
 
 Re-print keys anytime:
 
@@ -139,9 +139,22 @@ supabase migration new <name>
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Next.js dev server |
-| `npm run build` | Production build |
-| `npm run start` | Serve production build |
-| `npm run lint` | Lint |
+| Command                 | Description                                     |
+| ----------------------- | ----------------------------------------------- |
+| `npm run dev`           | Next.js dev server                              |
+| `npm run build`         | Production build                                |
+| `npm run start`         | Serve production build                          |
+| `npm run lint`          | ESLint check                                    |
+| `npm run lint:fix`      | ESLint with autofix                             |
+| `npm run format`        | Prettier write                                  |
+| `npm run format:check`  | Prettier check (CI)                             |
+| `npm run typecheck`     | TypeScript `--noEmit`                           |
+| `npm run quality:check` | format + lint + typecheck + coverage            |
+| `npm run test`          | Unit + integration (Vitest)                     |
+| `npm run test:watch`    | Vitest watch mode                               |
+| `npm run test:coverage` | Coverage with thresholds (`src/lib`, constants) |
+| `npm run test:e2e`      | Playwright E2E (Chromium)                       |
+
+Pre-commit runs `lint-staged` (ESLint `--fix` + Prettier) via Husky.
+
+CI (`.github/workflows/ci.yml`) runs quality checks, then build + E2E against `npm start`.
