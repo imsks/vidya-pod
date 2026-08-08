@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const orderId = `VP_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     const cashfreeRes = await fetch(
-      `${process.env.CASHFREE_BASE_URL}/orders`,
+      `${process.env.CASHFREE_BASE_URL}/pg/orders`,
       {
         method: "POST",
         headers: {
