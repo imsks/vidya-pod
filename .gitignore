@@ -16,6 +16,7 @@ out
 # env
 .env
 .env.local
+.env.production
 
 # Editor directories and files
 .vscode/*
@@ -28,6 +29,9 @@ out
 *.sln
 *.sw?
 
-.env
-.env.production
+# Testing
+coverage/
+playwright-report/
+test-results/
 *.tsbuildinfo
+tsconfig.tsbuildinfo

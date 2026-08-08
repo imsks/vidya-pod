@@ -19,10 +19,9 @@ function Reveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const io = new IntersectionObserver(
-      ([e]) => e.isIntersecting && setVisible(true),
-      { threshold: 0.15 },
-    );
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setVisible(true), {
+      threshold: 0.15,
+    });
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -81,10 +80,7 @@ function Nav() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/70 border-b border-border/60">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <a
-          href="#top"
-          className="flex items-center gap-2 font-display font-bold text-xl"
-        >
+        <a href="#top" className="flex items-center gap-2 font-display font-bold text-xl">
           <span className="inline-block w-8 h-8 rounded-xl bg-gradient-hero shadow-glow" />
           Vidya Pods
         </a>
@@ -129,18 +125,17 @@ function Hero() {
       <div className="relative max-w-7xl mx-auto px-6 py-20 md:py-28 grid md:grid-cols-2 gap-12 items-center">
         <div className="animate-fade-up">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
-            A Grassroots Education Movement
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />A Grassroots
+            Education Movement
           </div>
           <h1 className="mt-6 text-5xl md:text-7xl font-black leading-[1.02]">
             Every child deserves <br />
             <span className="text-gradient">a teacher at home.</span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl">
-            Vidya Pods brings{" "}
-            <strong className="text-foreground">free home tuitions</strong> to
-            school-going kids through tiny learning pods — run by real teachers,
-            managed by proctors, fuelled by sponsors like you.
+            Vidya Pods brings <strong className="text-foreground">free home tuitions</strong> to
+            school-going kids through tiny learning pods — run by real teachers, managed by
+            proctors, fuelled by sponsors like you.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
@@ -148,9 +143,7 @@ function Hero() {
               className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-7 py-4 font-semibold shadow-glow hover:shadow-lift transition-all hover:-translate-y-0.5"
             >
               Become a Sponsor
-              <span className="transition-transform group-hover:translate-x-1">
-                →
-              </span>
+              <span className="transition-transform group-hover:translate-x-1">→</span>
             </Link>
             <a
               href="#how"
@@ -171,17 +164,12 @@ function Hero() {
               ))}
             </div>
             <span>
-              Join{" "}
-              <strong className="text-foreground">120+ sponsors</strong>{" "}
-              already powering pods.
+              Join <strong className="text-foreground">120+ sponsors</strong> already powering pods.
             </span>
           </div>
         </div>
 
-        <div
-          className="relative animate-fade-up"
-          style={{ animationDelay: "200ms" }}
-        >
+        <div className="relative animate-fade-up" style={{ animationDelay: "200ms" }}>
           <div className="absolute -inset-6 bg-gradient-hero rounded-[2.5rem] blur-2xl opacity-40" />
           <Image
             src="/images/hero-pod.jpg"
@@ -237,8 +225,7 @@ function Stats() {
       <div
         className="absolute inset-0 opacity-10"
         style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+          backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
           backgroundSize: "32px 32px",
         }}
       />
@@ -249,9 +236,7 @@ function Stats() {
               <div className="text-5xl md:text-6xl font-black font-display">
                 <Counter to={st.n} suffix={st.s} />
               </div>
-              <div className="mt-2 text-sm uppercase tracking-widest opacity-80">
-                {st.label}
-              </div>
+              <div className="mt-2 text-sm uppercase tracking-widest opacity-80">{st.label}</div>
             </div>
           </Reveal>
         ))}
@@ -318,12 +303,11 @@ function HowItWorks() {
               How it Works
             </div>
             <h2 className="mt-3 text-4xl md:text-5xl font-black">
-              A simple system.{" "}
-              <span className="text-gradient">Four heroes.</span>
+              A simple system. <span className="text-gradient">Four heroes.</span>
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              No bureaucracy. No waste. Just four roles working together to
-              change one child&apos;s life at a time.
+              No bureaucracy. No waste. Just four roles working together to change one child&apos;s
+              life at a time.
             </p>
           </div>
         </Reveal>
@@ -346,9 +330,7 @@ function HowItWorks() {
                     {r.icon}
                   </div>
                   <h3 className="mt-5 text-2xl font-bold">{r.title}</h3>
-                  <p className="mt-2 text-muted-foreground leading-relaxed">
-                    {r.desc}
-                  </p>
+                  <p className="mt-2 text-muted-foreground leading-relaxed">{r.desc}</p>
                 </div>
               </div>
             </Reveal>
@@ -371,9 +353,7 @@ function HowItWorks() {
                       {s.n}
                     </div>
                     <h4 className="mt-5 font-bold text-lg">{s.t}</h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {s.d}
-                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">{s.d}</p>
                   </div>
                 </Reveal>
               ))}
@@ -388,24 +368,84 @@ function HowItWorks() {
 type Person = { name: string; role: string; detail: string; emoji: string };
 const PEOPLE: Record<string, Person[]> = {
   Students: [
-    { name: "Aarav, 9", role: "Grade 4 · Jaipur", detail: "Loves math puzzles and cricket.", emoji: "🧒" },
-    { name: "Ishita, 11", role: "Grade 6 · Lucknow", detail: "Dreams of becoming a doctor.", emoji: "👧" },
-    { name: "Rehan, 8", role: "Grade 3 · Bhopal", detail: "Draws rockets in every notebook.", emoji: "🚀" },
-    { name: "Priya, 12", role: "Grade 7 · Patna", detail: "Topped her last science test.", emoji: "🌟" },
+    {
+      name: "Aarav, 9",
+      role: "Grade 4 · Jaipur",
+      detail: "Loves math puzzles and cricket.",
+      emoji: "🧒",
+    },
+    {
+      name: "Ishita, 11",
+      role: "Grade 6 · Lucknow",
+      detail: "Dreams of becoming a doctor.",
+      emoji: "👧",
+    },
+    {
+      name: "Rehan, 8",
+      role: "Grade 3 · Bhopal",
+      detail: "Draws rockets in every notebook.",
+      emoji: "🚀",
+    },
+    {
+      name: "Priya, 12",
+      role: "Grade 7 · Patna",
+      detail: "Topped her last science test.",
+      emoji: "🌟",
+    },
   ],
   Teachers: [
-    { name: "Neha Sharma", role: "Science · Jaipur", detail: "7 years of teaching kids she loves.", emoji: "🧑‍🏫" },
-    { name: "Ravi Kumar", role: "Mathematics · Lucknow", detail: "Former IIT coach, now a pod teacher.", emoji: "👨‍🏫" },
-    { name: "Anita Das", role: "English · Bhopal", detail: "Turns grammar into storytelling.", emoji: "📚" },
+    {
+      name: "Neha Sharma",
+      role: "Science · Jaipur",
+      detail: "7 years of teaching kids she loves.",
+      emoji: "🧑‍🏫",
+    },
+    {
+      name: "Ravi Kumar",
+      role: "Mathematics · Lucknow",
+      detail: "Former IIT coach, now a pod teacher.",
+      emoji: "👨‍🏫",
+    },
+    {
+      name: "Anita Das",
+      role: "English · Bhopal",
+      detail: "Turns grammar into storytelling.",
+      emoji: "📚",
+    },
   ],
   Proctors: [
-    { name: "Meera Joshi", role: "Rajasthan Lead", detail: "Runs 12 pods across 3 cities.", emoji: "🛡️" },
-    { name: "Suresh Iyer", role: "UP Lead", detail: "Ex-teacher. Now powers operations.", emoji: "⚙️" },
+    {
+      name: "Meera Joshi",
+      role: "Rajasthan Lead",
+      detail: "Runs 12 pods across 3 cities.",
+      emoji: "🛡️",
+    },
+    {
+      name: "Suresh Iyer",
+      role: "UP Lead",
+      detail: "Ex-teacher. Now powers operations.",
+      emoji: "⚙️",
+    },
   ],
   Sponsors: [
-    { name: "Anonymous", role: "Yearly Sponsor", detail: "Funds an entire pod in Patna.", emoji: "💛" },
-    { name: "The Khanna Family", role: "Monthly Sponsors", detail: "3 years strong. 2 pods supported.", emoji: "🏡" },
-    { name: "Rohit M.", role: "Yearly Sponsor", detail: "In memory of his school teacher.", emoji: "🌸" },
+    {
+      name: "Anonymous",
+      role: "Yearly Sponsor",
+      detail: "Funds an entire pod in Patna.",
+      emoji: "💛",
+    },
+    {
+      name: "The Khanna Family",
+      role: "Monthly Sponsors",
+      detail: "3 years strong. 2 pods supported.",
+      emoji: "🏡",
+    },
+    {
+      name: "Rohit M.",
+      role: "Yearly Sponsor",
+      detail: "In memory of his school teacher.",
+      emoji: "🌸",
+    },
   ],
 };
 
@@ -421,8 +461,7 @@ function Showcase() {
               The Pod Family
             </div>
             <h2 className="mt-3 text-4xl md:text-5xl font-black">
-              Meet the <span className="text-gradient">humans</span> behind the
-              pods.
+              Meet the <span className="text-gradient">humans</span> behind the pods.
             </h2>
           </div>
         </Reveal>
@@ -496,10 +535,7 @@ function Tributes() {
     },
   ];
   return (
-    <section
-      id="tributes"
-      className="py-24 bg-background relative overflow-hidden"
-    >
+    <section id="tributes" className="py-24 bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-warm opacity-40" />
       <div className="relative max-w-7xl mx-auto px-6">
         <Reveal>
@@ -508,12 +544,10 @@ function Tributes() {
               Inspired By
             </div>
             <h2 className="mt-3 text-4xl md:text-5xl font-black">
-              We stand on the{" "}
-              <span className="text-gradient">shoulders of giants.</span>
+              We stand on the <span className="text-gradient">shoulders of giants.</span>
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Not our idea. Just our humble attempt to carry forward what they
-              started.
+              Not our idea. Just our humble attempt to carry forward what they started.
             </p>
           </div>
         </Reveal>
@@ -535,12 +569,8 @@ function Tributes() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-2xl font-black">{t.name}</h3>
-                  <div className="text-sm font-semibold text-tribute mt-1">
-                    {t.by}
-                  </div>
-                  <p className="mt-3 text-muted-foreground leading-relaxed">
-                    {t.text}
-                  </p>
+                  <div className="text-sm font-semibold text-tribute mt-1">{t.by}</div>
+                  <p className="mt-3 text-muted-foreground leading-relaxed">{t.text}</p>
                 </div>
               </article>
             </Reveal>
@@ -560,8 +590,7 @@ function SponsorCTA() {
       <div
         className="absolute inset-0 opacity-10"
         style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+          backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
           backgroundSize: "24px 24px",
         }}
       />
@@ -581,8 +610,8 @@ function SponsorCTA() {
             <span className="text-gradient">Fuel a generation.</span>
           </h2>
           <p className="mt-6 text-lg md:text-xl opacity-80 max-w-2xl mx-auto">
-            A single pod costs ₹{PRICING.monthly.total.toLocaleString("en-IN")}/month — covering a teacher, books, and
-            4–6 kids. Choose how you&apos;d like to give.
+            A single pod costs ₹{PRICING.monthly.total.toLocaleString("en-IN")}/month — covering a
+            teacher, books, and 4–6 kids. Choose how you&apos;d like to give.
           </p>
         </Reveal>
 
@@ -619,14 +648,10 @@ function SponsorCTA() {
                       {plan.suffix}
                     </span>
                   </div>
-                  <p
-                    className={`mt-3 ${plan.featured ? "opacity-95" : "opacity-80"}`}
-                  >
+                  <p className={`mt-3 ${plan.featured ? "opacity-95" : "opacity-80"}`}>
                     {plan.tagline}
                   </p>
-                  <ul
-                    className={`mt-5 space-y-2 text-sm ${!plan.featured ? "opacity-90" : ""}`}
-                  >
+                  <ul className={`mt-5 space-y-2 text-sm ${!plan.featured ? "opacity-90" : ""}`}>
                     {plan.features.map((f) => (
                       <li key={f}>✓ {f}</li>
                     ))}
@@ -634,9 +659,7 @@ function SponsorCTA() {
                   <Link
                     href="/sponsor"
                     className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-6 py-4 font-bold hover:scale-[1.02] transition-transform ${
-                      plan.featured
-                        ? "bg-foreground text-background"
-                        : "bg-white text-foreground"
+                      plan.featured ? "bg-foreground text-background" : "bg-white text-foreground"
                     }`}
                   >
                     Sponsor {plan.label} →
@@ -647,8 +670,7 @@ function SponsorCTA() {
           })}
         </div>
         <p className="mt-8 text-sm opacity-70">
-          100% of funds flow to pods. We audit quarterly. Transparency is
-          non-negotiable.
+          100% of funds flow to pods. We audit quarterly. Transparency is non-negotiable.
         </p>
       </div>
     </section>
@@ -732,8 +754,7 @@ function OpenSource() {
       <div
         className="absolute inset-0 opacity-5"
         style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
+          backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
           backgroundSize: "32px 32px",
         }}
       />
@@ -752,8 +773,8 @@ function OpenSource() {
             Built in the open, <span className="text-gradient">with you.</span>
           </h2>
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Vidya Pods is fully open source. We believe in transparency — not just in finances,
-            but in code. Contribute features, report issues, or fork it for your own community.
+            Vidya Pods is fully open source. We believe in transparency — not just in finances, but
+            in code. Contribute features, report issues, or fork it for your own community.
           </p>
         </Reveal>
 
@@ -765,12 +786,7 @@ function OpenSource() {
               rel="noopener noreferrer"
               className="group inline-flex items-center gap-3 rounded-full bg-foreground text-background px-7 py-4 font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
             >
-              <svg
-                className="w-5 h-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   fillRule="evenodd"
                   d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
@@ -826,7 +842,8 @@ function OpenSource() {
 
         <Reveal delay={300}>
           <p className="mt-12 text-sm text-muted-foreground">
-            Licensed under MIT. Free to use, modify, and share. Let&apos;s build education infrastructure together.
+            Licensed under MIT. Free to use, modify, and share. Let&apos;s build education
+            infrastructure together.
           </p>
         </Reveal>
       </div>
@@ -845,14 +862,11 @@ function Footer() {
               Vidya Pods
             </div>
             <p className="mt-4 text-sm opacity-70 max-w-xs">
-              A pod-based education system bringing free home tuitions to every
-              child who needs one.
+              A pod-based education system bringing free home tuitions to every child who needs one.
             </p>
           </div>
           <div>
-            <div className="text-xs font-bold uppercase tracking-widest opacity-60">
-              Explore
-            </div>
+            <div className="text-xs font-bold uppercase tracking-widest opacity-60">Explore</div>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
                 <a href="#how" className="hover:opacity-100 opacity-80">
@@ -895,9 +909,7 @@ function Footer() {
               theboringeducation@gmail.com
             </a>
             <div className="mt-6">
-              <div className="text-xs font-bold uppercase tracking-widest opacity-60">
-                Policies
-              </div>
+              <div className="text-xs font-bold uppercase tracking-widest opacity-60">Policies</div>
               <ul className="mt-3 space-y-2 text-sm">
                 <li>
                   <Link href="/contact" className="hover:opacity-100 opacity-80">
@@ -926,11 +938,7 @@ function Footer() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 hover:opacity-100 transition"
           >
-            Powered by{" "}
-            <strong className="text-primary-foreground">
-              The Boring Education
-            </strong>{" "}
-            ↗
+            Powered by <strong className="text-primary-foreground">The Boring Education</strong> ↗
           </a>
         </div>
       </div>
