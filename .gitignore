@@ -30,3 +30,8 @@ out
 
 .env
 .env.production
+
+# Testing
+coverage/
+playwright-report/
+test-results/
