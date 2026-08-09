@@ -93,7 +93,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<anon key from supabase start / status>
 # Cashfree can stay on sandbox while you test payments
 CASHFREE_CLIENT_ID=your-client-id
 CASHFREE_SECRET_KEY=your-secret-key
-CASHFREE_BASE_URL=https://sandbox.cashfree.com
+CASHFREE_BASE_URL=https://sandbox.cashfree.com/pg
 
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
