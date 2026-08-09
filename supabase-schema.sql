@@ -130,3 +130,52 @@ ALTER TABLE teachers ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE proctors ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE sponsor_orders ADD COLUMN IF NOT EXISTS image_url TEXT;
+
+
+
+-- Pod and RBAC foundation for multi-login system
+-- Related to: https://github.com/imsks/vidya-pod/issues/13
+
+CREATE TABLE IF NOT EXISTS pods (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  location TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  auth_user_id UUID UNIQUE,
+  name TEXT NOT NULL,
+  email TEXT,
+  phone TEXT,
+  role TEXT NOT NULL CHECK (role IN ('admin', 'teacher', 'student', 'donor', 'proctor')),
+  image_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pod_memberships (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  pod_id UUID NOT NULL REFERENCES pods(id) ON DELETE CASCADE,
+  user_profile_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('teacher', 'student', 'donor', 'proctor')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (pod_id, user_profile_id, role)
+);
+
+ALTER TABLE pods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pod_memberships ENABLE ROW LEVEL SECURITY;
+
+-- Temporary permissive policies for early development.
+-- These should be tightened once authentication and role-aware access control are implemented.
+CREATE POLICY "Allow public read pods" ON pods FOR SELECT USING (true);
+CREATE POLICY "Allow public read user profiles" ON user_profiles FOR SELECT USING (true);
+CREATE POLICY "Allow public read pod memberships" ON pod_memberships FOR SELECT USING (true);
+
+CREATE POLICY "Allow public insert pods" ON pods FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public insert user profiles" ON user_profiles FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public insert pod memberships" ON pod_memberships FOR INSERT WITH CHECK (true);
