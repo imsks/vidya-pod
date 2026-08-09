@@ -37,6 +37,7 @@ export function UploadLearnerPage() {
     id: string;
     name: string;
   } | null>(null);
+  const [uploadWarning, setUploadWarning] = useState<string | null>(null);
 
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +132,9 @@ export function UploadLearnerPage() {
         id: data.learner.id,
         name: data.learner.name,
       });
+      if (data.warning) {
+        setUploadWarning(data.warning);
+      }
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -142,6 +146,7 @@ export function UploadLearnerPage() {
   const handleReset = () => {
     setSubmitted(false);
     setCreatedLearner(null);
+    setUploadWarning(null);
     setFormData({
       name: "",
       phone: "",
@@ -167,6 +172,11 @@ export function UploadLearnerPage() {
             added to the platform.
           </p>
           <p className="mt-2 text-xs text-muted-foreground">ID: {createdLearner.id}</p>
+          {uploadWarning && (
+            <div className="mt-4 rounded-xl bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 px-4 py-3 text-sm">
+              ⚠️ {uploadWarning}
+            </div>
+          )}
           <div className="mt-8 flex gap-3 justify-center">
             <Link
               href="/admin"
@@ -357,19 +367,27 @@ export function UploadLearnerPage() {
                     </div>
                   </div>
                 ) : (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-border bg-card hover:border-primary/40 cursor-pointer transition"
+                  <label
+                    htmlFor="photo-upload"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-border bg-card hover:border-primary/40 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer transition"
                   >
                     <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl">
                       📷
                     </div>
                     <p className="mt-3 text-sm font-medium">Click to upload photo</p>
                     <p className="mt-1 text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
-                  </div>
+                  </label>
                 )}
                 <input
                   ref={fileInputRef}
+                  id="photo-upload"
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}

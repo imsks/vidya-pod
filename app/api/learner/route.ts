@@ -94,11 +94,15 @@ export async function POST(request: Request) {
 
     // Handle photo upload if provided
     let finalImageUrl: string | null = image_url || null;
+    let photoUploadWarning: string | undefined;
 
     if (photo_data && photo_filename) {
       const uploadedUrl = await uploadPhotoToStorage(photo_data, photo_filename);
       if (uploadedUrl) {
         finalImageUrl = uploadedUrl;
+      } else {
+        // Photo upload failed - continue but include warning in response
+        photoUploadWarning = "Photo upload failed. Learner was created without an image.";
       }
     }
 
@@ -114,7 +118,19 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({
+    const response: {
+      success: boolean;
+      learner: {
+        id: string;
+        name: string;
+        phone: string;
+        standard: string;
+        image_url: string | null;
+        sponsor_id: string | null;
+        created_at: string;
+      };
+      warning?: string;
+    } = {
       success: true,
       learner: {
         id: learner.id,
@@ -125,7 +141,13 @@ export async function POST(request: Request) {
         sponsor_id: learner.sponsorId,
         created_at: learner.createdAt.toISOString(),
       },
-    });
+    };
+
+    if (photoUploadWarning) {
+      response.warning = photoUploadWarning;
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error in learner upload route:", error);
     const message = error instanceof Error ? error.message : "Internal server error";
