@@ -35,3 +35,6 @@ playwright-report/
 test-results/
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+
+# Prisma
+src/generated/prisma

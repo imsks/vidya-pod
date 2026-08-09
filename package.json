@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -20,9 +20,17 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "quality:check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:all": "npm run test && npm run test:e2e",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@prisma/client": "^7.9.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -55,7 +63,9 @@
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.5",
     "@vitest/coverage-v8": "^4.1.10",
+    "dotenv": "^17.4.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.0",
     "eslint-config-prettier": "^10.1.8",
@@ -63,6 +73,7 @@
     "jsdom": "^29.1.1",
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.6",
+    "prisma": "^7.9.1",
     "typescript": "^5.8.3",
     "vitest": "^4.1.10"
   }
