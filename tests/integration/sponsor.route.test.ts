@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const insertMock = vi.fn();
-const fromMock = vi.fn(() => ({ insert: insertMock }));
+const sponsorOrderCreateMock = vi.fn();
 
-vi.mock("@/lib/supabase", () => ({
-  getSupabase: () => ({
-    from: fromMock,
+vi.mock("@/lib/prisma", () => ({
+  getPrisma: () => ({
+    sponsorOrder: { create: sponsorOrderCreateMock },
   }),
 }));
 
@@ -13,7 +12,7 @@ describe("POST /api/sponsor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
-    insertMock.mockResolvedValue({ error: null });
+    sponsorOrderCreateMock.mockResolvedValue({});
     process.env.CASHFREE_BASE_URL = "https://sandbox.cashfree.com";
     process.env.CASHFREE_CLIENT_ID = "client";
     process.env.CASHFREE_SECRET_KEY = "secret";
@@ -63,16 +62,15 @@ describe("POST /api/sponsor", () => {
     const json = await response.json();
     expect(json.paymentSessionId).toBe("session_123");
     expect(json.orderId).toMatch(/^VP_/);
-    expect(fromMock).toHaveBeenCalledWith("sponsor_orders");
-    expect(insertMock).toHaveBeenCalledWith(
-      expect.objectContaining({
+    expect(sponsorOrderCreateMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
         name: "Donor",
         plan: "monthly",
         amount: 400,
         status: "PENDING",
-        payment_session_id: "session_123",
+        paymentSessionId: "session_123",
       }),
-    );
+    });
   });
 
   it("returns 502 when cashfree fails", async () => {

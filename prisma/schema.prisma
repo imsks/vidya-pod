@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// CORE ENTITY MODELS
+// ============================================
+
+/// Sponsors - Individuals or organizations sponsoring learners
+model Sponsor {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  email        String
+  phone        String
+  organization String?
+  imageUrl     String?        @map("image_url")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  learners     Learner[]
+  orders       SponsorOrder[]
+
+  @@map("sponsors")
+}
+
+/// Learners - Students/learners using the platform
+model Learner {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  phone     String
+  standard  String
+  imageUrl  String?  @map("image_url")
+  sponsorId String?  @map("sponsor_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  sponsor   Sponsor? @relation(fields: [sponsorId], references: [id])
+
+  @@index([sponsorId])
+  @@map("learners")
+}
+
+/// Teachers - Instructors teaching learners
+model Teacher {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  phone         String
+  qualification String
+  imageUrl      String?  @map("image_url")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("teachers")
+}
+
+/// Proctors - Proctors overseeing learner activities
+model Proctor {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  phone         String
+  qualification String
+  imageUrl      String?  @map("image_url")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("proctors")
+}
+
+/// Sponsor order status enum
+enum SponsorOrderStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+/// Sponsor plan type enum
+enum SponsorPlanType {
+  monthly
+  yearly
+}
+
+/// SponsorOrders - Orders/records of sponsorship transactions
+model SponsorOrder {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId          String             @unique @map("order_id")
+  name             String
+  email            String
+  phone            String
+  plan             SponsorPlanType
+  amount           Int
+  status           SponsorOrderStatus @default(PENDING)
+  paymentSessionId String?            @map("payment_session_id")
+  sponsorId        String?            @map("sponsor_id") @db.Uuid
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  sponsor          Sponsor?           @relation(fields: [sponsorId], references: [id])
+
+  @@index([sponsorId])
+  @@index([status])
+  @@map("sponsor_orders")
+}
+
+// ============================================
+// LEGACY MODELS (for backward compatibility)
+// ============================================
+
+/// Students - Legacy table (use Learner for new development)
+model Student {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  phone     String
+  standard  String
+  imageUrl  String?  @map("image_url")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("students")
+}

@@ -28,6 +28,9 @@ coverage/
 playwright-report/
 test-results/
 
+# Prisma
+src/generated/prisma
+
 # Logs
 logs
 *.log

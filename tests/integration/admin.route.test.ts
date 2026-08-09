@@ -1,21 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const selectMock = vi.fn();
-const orderMock = vi.fn();
-const fromMock = vi.fn();
+const teacherFindManyMock = vi.fn();
+const studentFindManyMock = vi.fn();
+const proctorFindManyMock = vi.fn();
+const sponsorOrderFindManyMock = vi.fn();
 
-vi.mock("@/lib/supabase", () => ({
-  getSupabase: () => ({
-    from: fromMock,
+vi.mock("@/lib/prisma", () => ({
+  getPrisma: () => ({
+    teacher: { findMany: teacherFindManyMock },
+    student: { findMany: studentFindManyMock },
+    proctor: { findMany: proctorFindManyMock },
+    sponsorOrder: { findMany: sponsorOrderFindManyMock },
   }),
 }));
 
 describe("GET /api/admin", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    orderMock.mockResolvedValue({ data: [] });
-    selectMock.mockReturnValue({ order: orderMock });
-    fromMock.mockReturnValue({ select: selectMock });
+    teacherFindManyMock.mockResolvedValue([]);
+    studentFindManyMock.mockResolvedValue([]);
+    proctorFindManyMock.mockResolvedValue([]);
+    sponsorOrderFindManyMock.mockResolvedValue([]);
   });
 
   it("returns empty collections when no rows exist", async () => {
@@ -29,9 +34,9 @@ describe("GET /api/admin", () => {
       proctors: [],
       sponsors: [],
     });
-    expect(fromMock).toHaveBeenCalledWith("teachers");
-    expect(fromMock).toHaveBeenCalledWith("students");
-    expect(fromMock).toHaveBeenCalledWith("proctors");
-    expect(fromMock).toHaveBeenCalledWith("sponsor_orders");
+    expect(teacherFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
+    expect(studentFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
+    expect(proctorFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
+    expect(sponsorOrderFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
   });
 });
