@@ -16,6 +16,7 @@ out
 # env
 .env
 .env.local
+.env.production
 
 # Editor directories and files
 .vscode/*
@@ -28,11 +29,11 @@ out
 *.sln
 *.sw?
 
-.env
-.env.production
-
 # Testing
 coverage/
 playwright-report/
 test-results/
 tsconfig.tsbuildinfo
+
+# Prisma
+src/generated/prisma
