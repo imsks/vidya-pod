@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { SponsorOrderStatus } from "@/generated/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { createSponsorOrderId, parseSponsorBody } from "@/lib/validation/sponsor";
 
 export async function POST(request: Request) {
@@ -12,7 +13,6 @@ export async function POST(request: Request) {
     }
 
     const { name, email, phone, plan, amount } = parsed.data;
-    const supabase = getSupabase();
     const orderId = createSponsorOrderId();
 
     const cashfreeRes = await fetch(`${process.env.CASHFREE_BASE_URL}/orders`, {
@@ -47,27 +47,27 @@ export async function POST(request: Request) {
 
     const cashfreeData = await cashfreeRes.json();
 
-    const { error: dbError } = await supabase.from("sponsor_orders").insert({
-      order_id: orderId,
-      name,
-      email,
-      phone,
-      plan,
-      amount,
-      status: "PENDING",
-      payment_session_id: cashfreeData.payment_session_id,
+    const prisma = getPrisma();
+    await prisma.sponsorOrder.create({
+      data: {
+        orderId,
+        name,
+        email,
+        phone,
+        plan,
+        amount,
+        status: SponsorOrderStatus.PENDING,
+        paymentSessionId: cashfreeData.payment_session_id,
+      },
     });
-
-    if (dbError) {
-      console.error("DB error:", dbError);
-      return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
-    }
 
     return NextResponse.json({
       orderId,
       paymentSessionId: cashfreeData.payment_session_id,
     });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error) {
+    console.error("Error in sponsor route:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

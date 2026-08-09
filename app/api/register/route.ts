@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
-import { getRegisterTable, parseRegisterBody } from "@/lib/validation/register";
+import { getPrisma } from "@/lib/prisma";
+import { parseRegisterBody } from "@/lib/validation/register";
 
 export async function POST(request: Request) {
   try {
@@ -11,34 +11,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: parsed.error }, { status: parsed.status });
     }
 
-    const supabase = getSupabase();
     const { role, name, phone, image_url } = parsed.data;
+    const imageUrl = image_url || null;
 
-    let result;
+    const prisma = getPrisma();
     if (role === "student") {
-      result = await supabase.from("students").insert({
-        name,
-        phone,
-        standard: parsed.data.standard,
-        image_url: image_url || null,
+      await prisma.student.create({
+        data: {
+          name,
+          phone,
+          standard: parsed.data.standard,
+          imageUrl,
+        },
+      });
+    } else if (role === "teacher") {
+      await prisma.teacher.create({
+        data: {
+          name,
+          phone,
+          qualification: parsed.data.qualification,
+          imageUrl,
+        },
       });
     } else {
-      const table = getRegisterTable(role);
-      result = await supabase.from(table).insert({
-        name,
-        phone,
-        qualification: parsed.data.qualification,
-        image_url: image_url || null,
+      await prisma.proctor.create({
+        data: {
+          name,
+          phone,
+          qualification: parsed.data.qualification,
+          imageUrl,
+        },
       });
-    }
-
-    if (result.error) {
-      return NextResponse.json({ error: result.error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error in register route:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
