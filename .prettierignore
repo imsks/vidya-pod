@@ -1,7 +1,11 @@
 node_modules
+.next
+out
 dist
-.output
-.vinxi
-pnpm-lock.yaml
+coverage
+playwright-report
+test-results
 package-lock.json
-routeTree.gen.ts
+pnpm-lock.yaml
+*.min.js
+public

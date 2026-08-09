@@ -8,6 +8,7 @@
 /out/
 /build/
 /dist/
+tsconfig.tsbuildinfo
 
 # Environment files and secrets (NEVER COMMIT SECRETS)
 .env
@@ -21,6 +22,11 @@
 *.pem
 *.key
 credentials.json
+
+# Testing
+coverage/
+playwright-report/
+test-results/
 
 # Logs
 logs

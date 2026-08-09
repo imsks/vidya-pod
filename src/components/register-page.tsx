@@ -1,23 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
 
 type Role = "teacher" | "student" | "proctor";
 
-const ADMIN_ID = "sachin";
-const ADMIN_PASSWORD = "sachin";
-
 export function RegisterPage() {
   const { user } = useAuth();
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [loginId, setLoginId] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-
   const [role, setRole] = useState<Role | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -72,14 +62,11 @@ export function RegisterPage() {
           <div className="w-20 h-20 mx-auto rounded-full bg-accent/20 flex items-center justify-center text-4xl">
             ✅
           </div>
-          <h1 className="mt-6 text-3xl font-black font-display">
-            You&apos;re In!
-          </h1>
+          <h1 className="mt-6 text-3xl font-black font-display">You&apos;re In!</h1>
           <p className="mt-3 text-muted-foreground">
-            Thank you, <strong className="text-foreground">{name}</strong>!
-            You&apos;ve registered as a{" "}
-            <strong className="text-foreground capitalize">{role}</strong>.
-            We&apos;ll reach out to you soon.
+            Thank you, <strong className="text-foreground">{name}</strong>! You&apos;ve registered
+            as a <strong className="text-foreground capitalize">{role}</strong>. We&apos;ll reach
+            out to you soon.
           </p>
           <div className="mt-8 flex gap-3 justify-center">
             <Link
@@ -112,10 +99,7 @@ export function RegisterPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/70 border-b border-border/60">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-display font-bold text-xl"
-          >
+          <Link href="/" className="flex items-center gap-2 font-display font-bold text-xl">
             <span className="inline-block w-8 h-8 rounded-xl bg-gradient-hero shadow-glow" />
             Vidya Pods
           </Link>
@@ -128,9 +112,7 @@ export function RegisterPage() {
             Join the Movement
           </div>
           <h1 className="mt-3 text-4xl font-black font-display">Register</h1>
-          <p className="mt-3 text-muted-foreground">
-            Choose your role and fill in your details.
-          </p>
+          <p className="mt-3 text-muted-foreground">Choose your role and fill in your details.</p>
         </div>
 
         {!role && (
@@ -190,9 +172,7 @@ export function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Full Name
-              </label>
+              <label className="block text-sm font-medium mb-2">Full Name</label>
               <input
                 type="text"
                 required
@@ -204,9 +184,7 @@ export function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Phone Number
-              </label>
+              <label className="block text-sm font-medium mb-2">Phone Number</label>
               <input
                 type="tel"
                 required
@@ -220,9 +198,7 @@ export function RegisterPage() {
 
             {role === "student" ? (
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Standard / Class
-                </label>
+                <label className="block text-sm font-medium mb-2">Standard / Class</label>
                 <select
                   required
                   value={standard}
@@ -239,18 +215,14 @@ export function RegisterPage() {
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Qualification
-                </label>
+                <label className="block text-sm font-medium mb-2">Qualification</label>
                 <input
                   type="text"
                   required
                   value={qualification}
                   onChange={(e) => setQualification(e.target.value)}
                   placeholder={
-                    role === "teacher"
-                      ? "e.g. B.Ed, M.Sc Mathematics"
-                      : "e.g. Graduate, MBA"
+                    role === "teacher" ? "e.g. B.Ed, M.Sc Mathematics" : "e.g. Graduate, MBA"
                   }
                   className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
                 />
@@ -259,7 +231,8 @@ export function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium mb-2">
-                Profile Image URL <span className="text-muted-foreground font-normal">(optional)</span>
+                Profile Image URL{" "}
+                <span className="text-muted-foreground font-normal">(optional)</span>
               </label>
               <input
                 type="url"

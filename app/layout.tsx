@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/styles.css";
+import { AuthProvider } from "@/context/auth-context";
 
 export const metadata: Metadata = {
   title: "Vidya Pods — Free Home Tuitions for Every Child",
@@ -19,8 +20,6 @@ export const metadata: Metadata = {
       "A pod-based education system bringing free home tuitions to school-going kids. Sponsor a pod. Change a life.",
   },
 };
-
-import { AuthProvider } from "@/context/auth-context";
 
 export default function RootLayout({
   children,
