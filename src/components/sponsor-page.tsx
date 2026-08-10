@@ -1,9 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { PRICING, type PlanType } from "@/constants/pricing";
+
+interface ReadyToSponsorLearner {
+  id: string;
+  name: string;
+  standard: string;
+  image_url: string | null;
+  created_at: string;
+}
+
+interface LearnersResponse {
+  success: boolean;
+  data: ReadyToSponsorLearner[];
+  pagination: {
+    page: number;
+    limit: number;
+    total_count: number;
+    total_pages: number;
+    has_next_page: boolean;
+    has_previous_page: boolean;
+  };
+}
 
 type CashfreeMode = "sandbox" | "production";
 
@@ -63,6 +85,32 @@ export function SponsorPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { loaded: cashfreeLoaded, launchPayment } = useCashfreeSDK();
+
+  // State for ready-to-sponsor learners
+  const [learners, setLearners] = useState<ReadyToSponsorLearner[]>([]);
+  const [learnersLoading, setLearnersLoading] = useState(true);
+  const [learnersError, setLearnersError] = useState("");
+
+  // Fetch learners ready to sponsor
+  useEffect(() => {
+    async function fetchLearners() {
+      try {
+        setLearnersLoading(true);
+        setLearnersError("");
+        const res = await fetch("/api/learner/ready-to-sponsor?limit=12");
+        if (!res.ok) {
+          throw new Error("Failed to fetch learners");
+        }
+        const data: LearnersResponse = await res.json();
+        setLearners(data.data);
+      } catch (err) {
+        setLearnersError(err instanceof Error ? err.message : "Failed to load learners");
+      } finally {
+        setLearnersLoading(false);
+      }
+    }
+    fetchLearners();
+  }, []);
 
   const pricing = PRICING[plan];
 
@@ -249,6 +297,85 @@ export function SponsorPage() {
               Secure payment via Cashfree. 100% goes to the pod.
             </p>
           </form>
+        </div>
+
+        {/* Ready to Sponsor Learners Section */}
+        <div className="mt-20">
+          <div className="text-center mb-10">
+            <div className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-primary">
+              Meet the Kids
+            </div>
+            <h2 className="mt-3 text-3xl md:text-4xl font-black">
+              Learners <span className="text-gradient">Ready for Sponsorship</span>
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              These children are waiting for a sponsor like you. Your support will help them access
+              quality education and transform their lives.
+            </p>
+          </div>
+
+          {learnersLoading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="p-6 rounded-2xl bg-card border border-border shadow-soft animate-pulse"
+                >
+                  <div className="w-20 h-20 rounded-full bg-muted mx-auto" />
+                  <div className="mt-4 h-5 bg-muted rounded w-3/4 mx-auto" />
+                  <div className="mt-2 h-4 bg-muted rounded w-1/2 mx-auto" />
+                </div>
+              ))}
+            </div>
+          ) : learnersError ? (
+            <div className="text-center py-10">
+              <div className="w-16 h-16 mx-auto rounded-full bg-destructive/10 flex items-center justify-center text-3xl mb-4">
+                ⚠️
+              </div>
+              <p className="text-muted-foreground">{learnersError}</p>
+            </div>
+          ) : learners.length === 0 ? (
+            <div className="text-center py-10">
+              <div className="w-16 h-16 mx-auto rounded-full bg-accent/20 flex items-center justify-center text-3xl mb-4">
+                🎉
+              </div>
+              <p className="text-lg font-semibold">All Learners Are Sponsored!</p>
+              <p className="text-muted-foreground mt-2">
+                Thank you to all our generous sponsors. Check back soon for new learners.
+              </p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {learners.map((learner) => (
+                <div
+                  key={learner.id}
+                  className="group p-6 rounded-2xl bg-card border border-border hover:border-primary/40 shadow-soft hover:shadow-lift transition-all hover:-translate-y-1"
+                >
+                  <div className="relative w-20 h-20 mx-auto rounded-full overflow-hidden bg-gradient-warm shadow-soft">
+                    {learner.image_url ? (
+                      <Image
+                        src={learner.image_url}
+                        alt={learner.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-4xl">
+                        🧒
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-center">{learner.name}</h3>
+                  <p className="text-sm text-center text-primary font-semibold uppercase tracking-wider mt-1">
+                    Grade {learner.standard}
+                  </p>
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    Waiting for a sponsor 💛
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
