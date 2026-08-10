@@ -33,6 +33,7 @@ out
 coverage/
 playwright-report/
 test-results/
+*.tsbuildinfo
 tsconfig.tsbuildinfo
 
 # Prisma
