@@ -7,6 +7,17 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   // Avoid Next inferring a parent lockfile (e.g. ~/package-lock.json) as the workspace root.
   outputFileTracingRoot: rootDir,
+
+  // Allow images from Supabase storage
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

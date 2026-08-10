@@ -27,6 +27,9 @@ interface LearnersResponse {
   };
 }
 
+/** Maximum number of learners to display in the "Ready for Sponsorship" section */
+const LEARNERS_DISPLAY_LIMIT = 12;
+
 type CashfreeMode = "sandbox" | "production";
 
 interface CashfreeCheckout {
@@ -97,7 +100,7 @@ export function SponsorPage() {
       try {
         setLearnersLoading(true);
         setLearnersError("");
-        const res = await fetch("/api/learner/ready-to-sponsor?limit=12");
+        const res = await fetch(`/api/learner/ready-to-sponsor?limit=${LEARNERS_DISPLAY_LIMIT}`);
         if (!res.ok) {
           throw new Error("Failed to fetch learners");
         }
