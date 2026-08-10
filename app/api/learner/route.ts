@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
-import { getSupabase } from "@/lib/supabase";
+import {
+  isPhotoUploadError,
+  isPhotoValidationError,
+  uploadEntityPhoto,
+} from "@/lib/storage";
 import { parseLearnerBody } from "@/lib/validation/learner";
 
 // TODO: Remove this PIN-based authentication once RBAC is enabled.
@@ -13,62 +17,6 @@ const validateAdminSecret = (secret: string | null): boolean => {
   }
   return secret === adminSecret;
 };
-
-/**
- * Uploads a photo to Supabase Storage and returns the public URL.
- * @param base64Data - Base64 encoded image data (with or without data URI prefix)
- * @param filename - Original filename or a generated name
- * @returns The public URL of the uploaded image, or null if upload fails
- */
-async function uploadPhotoToStorage(base64Data: string, filename: string): Promise<string | null> {
-  try {
-    const supabase = getSupabase();
-
-    // Remove data URI prefix if present (e.g., "data:image/png;base64,")
-    const base64Content = base64Data.includes(",") ? base64Data.split(",")[1] : base64Data;
-
-    // Decode base64 to binary
-    const binaryString = atob(base64Content);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-
-    // Determine content type from filename or default to jpeg
-    const extension = filename.split(".").pop()?.toLowerCase() || "jpg";
-    const contentType =
-      extension === "png"
-        ? "image/png"
-        : extension === "gif"
-          ? "image/gif"
-          : extension === "webp"
-            ? "image/webp"
-            : "image/jpeg";
-
-    // Generate a unique filename
-    const uniqueFilename = `learners/${Date.now()}-${filename}`;
-
-    const { data, error } = await supabase.storage.from("photos").upload(uniqueFilename, bytes, {
-      contentType,
-      upsert: false,
-    });
-
-    if (error) {
-      console.error("Error uploading photo to storage:", error);
-      return null;
-    }
-
-    // Get the public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("photos").getPublicUrl(data.path);
-
-    return publicUrl;
-  } catch (error) {
-    console.error("Error processing photo upload:", error);
-    return null;
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -97,12 +45,22 @@ export async function POST(request: Request) {
     let photoUploadWarning: string | undefined;
 
     if (photo_data && photo_filename) {
-      const uploadedUrl = await uploadPhotoToStorage(photo_data, photo_filename);
-      if (uploadedUrl) {
-        finalImageUrl = uploadedUrl;
-      } else {
-        // Photo upload failed - continue but include warning in response
-        photoUploadWarning = "Photo upload failed. Learner was created without an image.";
+      try {
+        finalImageUrl = await uploadEntityPhoto({
+          entityType: "learner",
+          base64Data: photo_data,
+          filename: photo_filename,
+        });
+      } catch (error) {
+        if (isPhotoUploadError(error) && isPhotoValidationError(error)) {
+          return NextResponse.json({ error: error.message }, { status: 400 });
+        }
+
+        if (isPhotoUploadError(error)) {
+          photoUploadWarning = error.message;
+        } else {
+          photoUploadWarning = "Photo upload failed. Learner was created without an image.";
+        }
       }
     }
 

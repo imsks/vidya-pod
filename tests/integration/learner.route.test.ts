@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const learnerCreateMock = vi.fn();
-const storageUploadMock = vi.fn();
-const storageGetPublicUrlMock = vi.fn();
+const uploadEntityPhotoMock = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   getPrisma: () => ({
@@ -10,16 +9,13 @@ vi.mock("@/lib/prisma", () => ({
   }),
 }));
 
-vi.mock("@/lib/supabase", () => ({
-  getSupabase: () => ({
-    storage: {
-      from: () => ({
-        upload: storageUploadMock,
-        getPublicUrl: storageGetPublicUrlMock,
-      }),
-    },
-  }),
-}));
+vi.mock("@/lib/storage", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/storage")>();
+  return {
+    ...actual,
+    uploadEntityPhoto: (...args: unknown[]) => uploadEntityPhotoMock(...args),
+  };
+});
 
 describe("POST /api/learner", () => {
   const originalEnv = process.env;
@@ -37,13 +33,7 @@ describe("POST /api/learner", () => {
       sponsorId: null,
       createdAt: new Date("2024-01-01T00:00:00Z"),
     });
-    storageUploadMock.mockResolvedValue({
-      data: { path: "learners/test-image.jpg" },
-      error: null,
-    });
-    storageGetPublicUrlMock.mockReturnValue({
-      data: { publicUrl: "https://storage.example.com/learners/test-image.jpg" },
-    });
+    uploadEntityPhotoMock.mockResolvedValue("https://storage.example.com/learners/test-image.jpg");
   });
 
   afterEach(() => {
@@ -261,5 +251,64 @@ describe("POST /api/learner", () => {
 
     expect(response.status).toBe(401);
     expect(learnerCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when photo exceeds size limit", async () => {
+    const { PhotoUploadError } = await import("@/lib/storage");
+    uploadEntityPhotoMock.mockRejectedValueOnce(
+      new PhotoUploadError("Photo exceeds the maximum allowed size of 5.0 MB.", "FILE_SIZE_LIMIT"),
+    );
+
+    const { POST } = await import("../../app/api/learner/route");
+    const response = await POST(
+      new Request("http://localhost/api/learner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          admin_secret: "test-secret-123",
+          name: "Test Learner",
+          phone: "9999999999",
+          standard: "8",
+          photo_data: "abc",
+          photo_filename: "large.jpg",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toMatch(/maximum allowed size/i);
+    expect(learnerCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("creates learner with warning when storage upload fails", async () => {
+    const { PhotoUploadError } = await import("@/lib/storage");
+    uploadEntityPhotoMock.mockRejectedValueOnce(
+      new PhotoUploadError(
+        'Storage bucket "photos" was not found. Create it in Supabase Storage.',
+        "BUCKET_NOT_FOUND",
+      ),
+    );
+
+    const { POST } = await import("../../app/api/learner/route");
+    const response = await POST(
+      new Request("http://localhost/api/learner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          admin_secret: "test-secret-123",
+          name: "Test Learner",
+          phone: "9999999999",
+          standard: "8",
+          photo_data: "abc",
+          photo_filename: "photo.jpg",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.warning).toMatch(/bucket "photos" was not found/i);
+    expect(learnerCreateMock).toHaveBeenCalled();
   });
 });
