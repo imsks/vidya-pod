@@ -9,10 +9,14 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
 
-    // Parse pagination parameters
-    const page = Math.max(1, parseInt(searchParams.get("page") || String(DEFAULT_PAGE), 10));
-    const requestedLimit = parseInt(searchParams.get("limit") || String(DEFAULT_LIMIT), 10);
-    const limit = Math.min(Math.max(1, requestedLimit), MAX_LIMIT);
+    // Parse pagination parameters with NaN protection
+    const parsedPage = parseInt(searchParams.get("page") || String(DEFAULT_PAGE), 10);
+    const page = Number.isNaN(parsedPage) ? DEFAULT_PAGE : Math.max(1, parsedPage);
+
+    const parsedLimit = parseInt(searchParams.get("limit") || String(DEFAULT_LIMIT), 10);
+    const limit = Number.isNaN(parsedLimit)
+      ? DEFAULT_LIMIT
+      : Math.min(Math.max(1, parsedLimit), MAX_LIMIT);
 
     const skip = (page - 1) * limit;
 

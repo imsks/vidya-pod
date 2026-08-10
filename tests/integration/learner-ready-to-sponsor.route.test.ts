@@ -172,6 +172,38 @@ describe("GET /api/learner/ready-to-sponsor", () => {
     );
   });
 
+  it("handles non-numeric page parameter gracefully", async () => {
+    const { GET } = await import("../../app/api/learner/ready-to-sponsor/route");
+    const request = new Request("http://localhost/api/learner/ready-to-sponsor?page=abc");
+    Object.defineProperty(request, "nextUrl", {
+      value: new URL("http://localhost/api/learner/ready-to-sponsor?page=abc"),
+    });
+
+    const response = await GET(request as never);
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+
+    expect(data.pagination.page).toBe(1);
+    expect(data.pagination.limit).toBe(10);
+  });
+
+  it("handles non-numeric limit parameter gracefully", async () => {
+    const { GET } = await import("../../app/api/learner/ready-to-sponsor/route");
+    const request = new Request("http://localhost/api/learner/ready-to-sponsor?limit=invalid");
+    Object.defineProperty(request, "nextUrl", {
+      value: new URL("http://localhost/api/learner/ready-to-sponsor?limit=invalid"),
+    });
+
+    const response = await GET(request as never);
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+
+    expect(data.pagination.page).toBe(1);
+    expect(data.pagination.limit).toBe(10);
+  });
+
   it("returns empty data when no learners are ready to sponsor", async () => {
     learnerFindManyMock.mockResolvedValue([]);
     learnerCountMock.mockResolvedValue(0);
