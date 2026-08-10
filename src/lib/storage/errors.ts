@@ -3,6 +3,7 @@ export type PhotoUploadErrorCode =
   | "INVALID_FORMAT"
   | "INVALID_BASE64"
   | "BUCKET_NOT_FOUND"
+  | "STORAGE_POLICY_DENIED"
   | "UPLOAD_FAILED"
   | "STORAGE_UNAVAILABLE";
 

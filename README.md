@@ -40,6 +40,7 @@ npm run dev
 | `DATABASE_URL`                         | `.env.example` (local Docker) or Supabase Dashboard (prod) |
 | `NEXT_PUBLIC_SUPABASE_URL`             | Optional — Supabase Dashboard → Project Settings → API     |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Optional — same page → publishable / anon key              |
+| `SUPABASE_SECRET_KEY`                | Optional — Settings → API Keys → **Secret key** (`sb_secret_...`, server-only; required for photo uploads) |
 | `CASHFREE_*`                           | Cashfree merchant dashboard (sandbox for local)            |
 | `NEXT_PUBLIC_APP_URL`                  | `http://localhost:3000` for local dev                      |
 
@@ -60,7 +61,7 @@ Reset the database: `make stop && docker compose down -v && make up`
 ### Notes
 
 - Postgres exposes port **5432** on the host. Stop any local Postgres instance if the port is already in use.
-- Never put the **service_role** key in `NEXT_PUBLIC_*` variables.
+- Never put the **secret key** (`SUPABASE_SECRET_KEY`) in `NEXT_PUBLIC_*` variables.
 
 ---
 

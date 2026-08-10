@@ -1,4 +1,4 @@
-import { getSupabase } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import {
   ALLOWED_PHOTO_EXTENSIONS,
   CONTENT_TYPE_BY_EXTENSION,
@@ -97,6 +97,17 @@ const mapStorageError = (message: string, statusCode?: string): PhotoUploadError
     );
   }
 
+  if (
+    normalized.includes("row-level security") ||
+    normalized.includes("rls") ||
+    normalized.includes("policy")
+  ) {
+    return new PhotoUploadError(
+      "Storage upload denied by row-level security. Set SUPABASE_SECRET_KEY for server-side uploads.",
+      "STORAGE_POLICY_DENIED",
+    );
+  }
+
   if (statusCode === "413") {
     return new PhotoUploadError(
       `Photo exceeds the maximum allowed size of ${(MAX_PHOTO_SIZE_BYTES / (1024 * 1024)).toFixed(1)} MB.`,
@@ -122,7 +133,7 @@ export const uploadEntityPhoto = async ({
   const storagePath = buildStoragePath(entityType, filename);
 
   try {
-    const supabase = getSupabase();
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase.storage.from(STORAGE_BUCKET).upload(storagePath, bytes, {
       contentType,
       upsert: false,

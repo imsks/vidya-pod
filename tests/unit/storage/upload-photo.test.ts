@@ -6,7 +6,7 @@ const storageUploadMock = vi.fn();
 const storageGetPublicUrlMock = vi.fn();
 
 vi.mock("@/lib/supabase", () => ({
-  getSupabase: () => ({
+  getSupabaseAdmin: () => ({
     storage: {
       from: (bucket: string) => {
         expect(bucket).toBe(STORAGE_BUCKET);
@@ -165,6 +165,26 @@ describe("uploadEntityPhoto", () => {
       }),
     ).rejects.toMatchObject({
       code: "FILE_SIZE_LIMIT",
+    });
+  });
+
+  it("maps RLS policy errors to STORAGE_POLICY_DENIED", async () => {
+    storageUploadMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: "new row violates row-level security policy", statusCode: "403" },
+    });
+
+    const { uploadEntityPhoto } = await import("@/lib/storage/upload-photo");
+
+    await expect(
+      uploadEntityPhoto({
+        entityType: "learner",
+        base64Data: tinyPngBase64,
+        filename: "photo.jpg",
+      }),
+    ).rejects.toMatchObject({
+      code: "STORAGE_POLICY_DENIED",
+      message: expect.stringMatching(/SUPABASE_SECRET_KEY/i),
     });
   });
 });
