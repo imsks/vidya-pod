@@ -23,6 +23,12 @@ export async function GET(_request: Request, context: RouteContext) {
             standard: true,
           },
         },
+        sponsor: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -41,6 +47,12 @@ export async function GET(_request: Request, context: RouteContext) {
           ? {
               name: order.learner.name,
               standard: order.learner.standard,
+            }
+          : null,
+        sponsor: order.sponsor
+          ? {
+              name: order.sponsor.name,
+              email: order.sponsor.email,
             }
           : null,
       },
