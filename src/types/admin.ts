@@ -35,6 +35,8 @@ export interface SponsorOrderRecord {
   amount: number;
   status: string;
   payment_session_id?: string | null;
+  learner_id?: string | null;
+  learner_name?: string | null;
   created_at?: string;
 }
 

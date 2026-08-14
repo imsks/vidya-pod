@@ -29,7 +29,11 @@ const mapProctor = (proctor: Proctor) => ({
   created_at: proctor.createdAt.toISOString(),
 });
 
-const mapSponsorOrder = (order: SponsorOrder) => ({
+type SponsorOrderWithLearner = SponsorOrder & {
+  learner: { id: string; name: string } | null;
+};
+
+const mapSponsorOrder = (order: SponsorOrderWithLearner) => ({
   id: order.id,
   order_id: order.orderId,
   name: order.name,
@@ -39,6 +43,8 @@ const mapSponsorOrder = (order: SponsorOrder) => ({
   amount: order.amount,
   status: order.status,
   payment_session_id: order.paymentSessionId,
+  learner_id: order.learnerId,
+  learner_name: order.learner?.name ?? null,
   created_at: order.createdAt.toISOString(),
 });
 
@@ -49,7 +55,14 @@ export async function GET() {
       prisma.teacher.findMany({ orderBy: { createdAt: "desc" } }),
       prisma.student.findMany({ orderBy: { createdAt: "desc" } }),
       prisma.proctor.findMany({ orderBy: { createdAt: "desc" } }),
-      prisma.sponsorOrder.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.sponsorOrder.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+          learner: {
+            select: { id: true, name: true },
+          },
+        },
+      }),
     ]);
 
     return NextResponse.json({

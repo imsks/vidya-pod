@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS sponsor_orders (
   status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED')),
   payment_session_id TEXT,
   sponsor_id UUID REFERENCES sponsors(id),
+  learner_id UUID REFERENCES learners(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -119,6 +120,7 @@ CREATE POLICY "Allow public update" ON sponsor_orders FOR UPDATE USING (true);
 
 CREATE INDEX IF NOT EXISTS idx_learners_sponsor_id ON learners(sponsor_id);
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_sponsor_id ON sponsor_orders(sponsor_id);
+CREATE INDEX IF NOT EXISTS idx_sponsor_orders_learner_id ON sponsor_orders(learner_id);
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_status ON sponsor_orders(status);
 
 -- ============================================
