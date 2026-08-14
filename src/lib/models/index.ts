@@ -82,6 +82,7 @@ export interface SponsorOrder extends BaseEntity {
   status: SponsorOrderStatus;
   payment_session_id?: string | null;
   sponsor_id?: string | null;
+  learner_id?: string | null;
 }
 
 /**

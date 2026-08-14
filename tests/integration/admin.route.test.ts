@@ -37,6 +37,13 @@ describe("GET /api/admin", () => {
     expect(teacherFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
     expect(studentFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
     expect(proctorFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
-    expect(sponsorOrderFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
+    expect(sponsorOrderFindManyMock).toHaveBeenCalledWith({
+      orderBy: { createdAt: "desc" },
+      include: {
+        learner: {
+          select: { id: true, name: true },
+        },
+      },
+    });
   });
 });

@@ -229,11 +229,11 @@ export function AdminPage() {
             )}
             {activeTab === "sponsors" && (
               <DataTable
-                columns={["Name", "Email", "Phone", "Plan", "Amount", "Status", "Date"]}
+                columns={["Name", "Email", "Learner", "Plan", "Amount", "Status", "Date"]}
                 rows={sponsors.map((s) => [
                   s.name,
                   s.email,
-                  s.phone,
+                  s.learner_name ?? "—",
                   s.plan,
                   `₹${s.amount}`,
                   s.status,
