@@ -47,8 +47,14 @@ export const SponsorCheckoutPage = ({ learnerId }: SponsorCheckoutPageProps) => 
     return (
       <div className="min-h-screen bg-background">
         <SponsorHeader />
-        <main className="max-w-4xl mx-auto px-6 py-16 text-center">
-          <div className="animate-pulse space-y-4">
+        <main className="max-w-4xl mx-auto px-6 py-16">
+          <Link
+            href="/sponsor"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Choose a different child
+          </Link>
+          <div className="mt-8 animate-pulse space-y-4 text-center">
             <div className="h-8 bg-muted rounded w-1/2 mx-auto" />
             <div className="h-4 bg-muted rounded w-2/3 mx-auto" />
           </div>
@@ -85,7 +91,14 @@ export const SponsorCheckoutPage = ({ learnerId }: SponsorCheckoutPageProps) => 
       <SponsorHeader />
 
       <main className="max-w-4xl mx-auto px-6 py-16">
-        <div className="text-center">
+        <Link
+          href="/sponsor"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← Choose a different child
+        </Link>
+
+        <div className="mt-8 text-center">
           <div className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Sponsor a Pod
           </div>
@@ -110,15 +123,6 @@ export const SponsorCheckoutPage = ({ learnerId }: SponsorCheckoutPageProps) => 
             <p className="text-xl font-bold">{learner.name}</p>
             <p className="text-sm text-primary font-semibold">Grade {learner.standard}</p>
           </div>
-        </div>
-
-        <div className="mt-6">
-          <Link
-            href="/sponsor"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Choose a different child
-          </Link>
         </div>
 
         <div className="mt-10">
