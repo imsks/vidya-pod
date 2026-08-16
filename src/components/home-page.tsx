@@ -3,6 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
+import { signInWithGoogle, signOut } from "@/lib/auth";
 import { PRICING, type PlanType } from "@/constants/pricing";
 
 function Reveal({
@@ -76,7 +79,32 @@ function Counter({
   );
 }
 
-function Nav() {
+function Nav({ user }: { user: User | null }) {
+  const router = useRouter();
+  const [signingIn, setSigningIn] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignIn(next?: string) {
+    setSigningIn(true);
+    try {
+      await signInWithGoogle(next);
+    } finally {
+      setSigningIn(false);
+    }
+  }
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await signOut();
+      router.refresh();
+    } catch (err) {
+      console.error("Sign out failed:", err);
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/70 border-b border-border/60">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -97,22 +125,53 @@ function Nav() {
           <a href="#opensource" className="hover:text-foreground transition">
             Open Source
           </a>
-          <Link href="/sponsor" className="hover:text-foreground transition">
-            Sponsor
-          </Link>
+          {user ? (
+            <Link href="/sponsor" className="hover:text-foreground transition">
+              Sponsor
+            </Link>
+          ) : (
+            <button
+              onClick={() => handleSignIn("/sponsor")}
+              disabled={signingIn}
+              className="hover:text-foreground transition disabled:opacity-50"
+            >
+              Sponsor
+            </button>
+          )}
         </nav>
-        <Link
-          href="/sponsor"
-          className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
-        >
-          Sponsor →
-        </Link>
+        {user ? (
+          <button
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            {signingOut ? "Signing out…" : "Sign Out"}
+          </button>
+        ) : (
+          <button
+            onClick={() => handleSignIn()}
+            disabled={signingIn}
+            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            {signingIn ? "Redirecting…" : "Login"}
+          </button>
+        )}
       </div>
     </header>
   );
 }
 
-function Hero() {
+function Hero({ user }: { user: User | null }) {
+  const [signingIn, setSigningIn] = useState(false);
+
+  async function handleSignIn() {
+    setSigningIn(true);
+    try {
+      await signInWithGoogle("/sponsor");
+    } finally {
+      setSigningIn(false);
+    }
+  }
   return (
     <section id="top" className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-warm" />
@@ -138,13 +197,26 @@ function Hero() {
             proctors, fuelled by sponsors like you.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
-            <Link
-              href="/sponsor"
-              className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-7 py-4 font-semibold shadow-glow hover:shadow-lift transition-all hover:-translate-y-0.5"
-            >
-              Become a Sponsor
-              <span className="transition-transform group-hover:translate-x-1">→</span>
-            </Link>
+            {user ? (
+              <Link
+                href="/sponsor"
+                className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-7 py-4 font-semibold shadow-glow hover:shadow-lift transition-all hover:-translate-y-0.5"
+              >
+                Become a Sponsor
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </Link>
+            ) : (
+              <button
+                onClick={handleSignIn}
+                disabled={signingIn}
+                className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-7 py-4 font-semibold shadow-glow hover:shadow-lift transition-all hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {signingIn ? "Redirecting…" : "Become a Sponsor"}
+                {!signingIn && (
+                  <span className="transition-transform group-hover:translate-x-1">→</span>
+                )}
+              </button>
+            )}
             <a
               href="#how"
               className="inline-flex items-center gap-2 rounded-full border-2 border-foreground/15 bg-card px-7 py-4 font-semibold hover:border-foreground/40 transition-all"
@@ -581,7 +653,17 @@ function Tributes() {
   );
 }
 
-function SponsorCTA() {
+function SponsorCTA({ user }: { user: User | null }) {
+  const [signingIn, setSigningIn] = useState(false);
+
+  async function handleSignIn() {
+    setSigningIn(true);
+    try {
+      await signInWithGoogle("/sponsor");
+    } finally {
+      setSigningIn(false);
+    }
+  }
   return (
     <section
       id="sponsor"
@@ -656,14 +738,26 @@ function SponsorCTA() {
                       <li key={f}>✓ {f}</li>
                     ))}
                   </ul>
-                  <Link
-                    href="/sponsor"
-                    className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-6 py-4 font-bold hover:scale-[1.02] transition-transform ${
-                      plan.featured ? "bg-foreground text-background" : "bg-white text-foreground"
-                    }`}
-                  >
-                    Sponsor {plan.label} →
-                  </Link>
+                  {user ? (
+                    <Link
+                      href="/sponsor"
+                      className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-6 py-4 font-bold hover:scale-[1.02] transition-transform ${
+                        plan.featured ? "bg-foreground text-background" : "bg-white text-foreground"
+                      }`}
+                    >
+                      Sponsor {plan.label} →
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={handleSignIn}
+                      disabled={signingIn}
+                      className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-6 py-4 font-bold hover:scale-[1.02] transition-transform disabled:opacity-70 disabled:cursor-not-allowed ${
+                        plan.featured ? "bg-foreground text-background" : "bg-white text-foreground"
+                      }`}
+                    >
+                      {signingIn ? "Redirecting…" : `Sponsor ${plan.label} →`}
+                    </button>
+                  )}
                 </div>
               </Reveal>
             );
@@ -946,16 +1040,16 @@ function Footer() {
   );
 }
 
-export function HomePage() {
+export function HomePage({ user }: { user: User | null }) {
   return (
     <main>
-      <Nav />
-      <Hero />
+      <Nav user={user} />
+      <Hero user={user} />
       <Stats />
       <HowItWorks />
       <Showcase />
       <Tributes />
-      <SponsorCTA />
+      <SponsorCTA user={user} />
       <FAQ />
       <OpenSource />
       <Footer />
