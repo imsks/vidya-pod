@@ -5,13 +5,13 @@ import { useState, useEffect } from "react";
 import { clearAdminSessionPin, setAdminSessionPin } from "@/lib/admin-session";
 import type {
   AdminDashboardData,
+  LearnerRecord,
   ProctorRecord,
   SponsorOrderRecord,
-  StudentRecord,
   TeacherRecord,
 } from "@/types/admin";
 
-type Tab = "teachers" | "students" | "proctors" | "sponsors";
+type Tab = "teachers" | "learners" | "proctors" | "sponsors";
 
 const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateString("en-IN") : "—");
 
@@ -24,7 +24,7 @@ export function AdminPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>("teachers");
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
-  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [learners, setLearners] = useState<LearnerRecord[]>([]);
   const [proctors, setProctors] = useState<ProctorRecord[]>([]);
   const [sponsors, setSponsors] = useState<SponsorOrderRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -76,7 +76,7 @@ export function AdminPage() {
         if (!res.ok) throw new Error("Failed to fetch");
         const data = (await res.json()) as AdminDashboardData;
         setTeachers(data.teachers ?? []);
-        setStudents(data.students ?? []);
+        setLearners(data.learners ?? []);
         setProctors(data.proctors ?? []);
         setSponsors(data.sponsors ?? []);
       } catch (err) {
@@ -135,7 +135,7 @@ export function AdminPage() {
 
   const tabs: { key: Tab; label: string; count: number; icon: string }[] = [
     { key: "teachers", label: "Teachers", count: teachers.length, icon: "🧑‍🏫" },
-    { key: "students", label: "Students", count: students.length, icon: "🧒" },
+    { key: "learners", label: "Learners", count: learners.length, icon: "🧒" },
     { key: "proctors", label: "Proctors", count: proctors.length, icon: "🛡️" },
     {
       key: "sponsors",
@@ -144,6 +144,24 @@ export function AdminPage() {
       icon: "💛",
     },
   ];
+
+  const addHref =
+    activeTab === "teachers"
+      ? "/admin/teacher"
+      : activeTab === "learners"
+        ? "/admin/learner"
+        : activeTab === "proctors"
+          ? "/admin/proctor"
+          : "/admin/learner";
+
+  const addLabel =
+    activeTab === "teachers"
+      ? "Teacher"
+      : activeTab === "learners"
+        ? "Learner"
+        : activeTab === "proctors"
+          ? "Proctor"
+          : "Learner";
 
   return (
     <div className="min-h-screen bg-background">
@@ -161,22 +179,16 @@ export function AdminPage() {
               + Teacher
             </Link>
             <Link
-              href="/admin/student"
+              href="/admin/learner"
               className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
             >
-              + Student
+              + Learner
             </Link>
             <Link
               href="/admin/proctor"
               className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
             >
               + Proctor
-            </Link>
-            <Link
-              href="/admin/learner"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2 text-sm font-semibold hover:shadow-lift transition-all"
-            >
-              + Learner
             </Link>
             <button
               onClick={() => {
@@ -222,32 +234,10 @@ export function AdminPage() {
         {activeTab !== "sponsors" && (
           <div className="mb-6">
             <Link
-              href={
-                activeTab === "teachers"
-                  ? "/admin/teacher"
-                  : activeTab === "students"
-                    ? "/admin/student"
-                    : "/admin/proctor"
-              }
+              href={addHref}
               className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:shadow-lift transition-all"
             >
-              + Add{" "}
-              {activeTab === "teachers"
-                ? "Teacher"
-                : activeTab === "students"
-                  ? "Student"
-                  : "Proctor"}
-            </Link>
-          </div>
-        )}
-
-        {activeTab === "sponsors" && (
-          <div className="mb-6">
-            <Link
-              href="/admin/learner"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:shadow-lift transition-all"
-            >
-              + Add Learner
+              + Add {addLabel}
             </Link>
           </div>
         )}
@@ -270,18 +260,19 @@ export function AdminPage() {
                 emptyMsg="No teachers registered yet"
               />
             )}
-            {activeTab === "students" && (
+            {activeTab === "learners" && (
               <DataTable
-                columns={["Image", "Name", "Phone", "Standard", "Registered"]}
-                rows={students.map((s) => [
-                  s.image_url || "",
-                  s.name,
-                  s.phone,
-                  `Class ${s.standard ?? "—"}`,
-                  formatDate(s.created_at),
+                columns={["Image", "Name", "Phone", "Class", "Sponsored", "Registered"]}
+                rows={learners.map((l) => [
+                  l.image_url || "",
+                  l.name,
+                  l.phone,
+                  `Class ${l.standard ?? "—"}`,
+                  l.sponsor_id ? "Yes" : "No",
+                  formatDate(l.created_at),
                 ])}
                 imageColumn={0}
-                emptyMsg="No students registered yet"
+                emptyMsg="No learners registered yet"
               />
             )}
             {activeTab === "proctors" && (

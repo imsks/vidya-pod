@@ -34,7 +34,6 @@ USING (bucket_id = 'photos');
 --   bucket_id = 'photos'
 --   AND (
 --     (storage.foldername(name))[1] = 'learners'
---     OR (storage.foldername(name))[1] = 'students'
 --     OR (storage.foldername(name))[1] = 'teachers'
 --     OR (storage.foldername(name))[1] = 'proctors'
 --     OR (storage.foldername(name))[1] = 'donors'

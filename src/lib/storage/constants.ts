@@ -8,12 +8,11 @@ export const ALLOWED_PHOTO_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"] as
 
 export type AllowedPhotoExtension = (typeof ALLOWED_PHOTO_EXTENSIONS)[number];
 
-export type StorageEntityType = "learner" | "student" | "teacher" | "proctor" | "donor";
+export type StorageEntityType = "learner" | "teacher" | "proctor" | "donor";
 
 /** Folder prefix inside the bucket for each entity type. */
 export const ENTITY_STORAGE_FOLDERS: Record<StorageEntityType, string> = {
   learner: "learners",
-  student: "students",
   teacher: "teachers",
   proctor: "proctors",
   donor: "donors",

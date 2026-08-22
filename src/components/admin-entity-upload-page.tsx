@@ -9,7 +9,7 @@ import {
   subscribeAdminSessionPin,
 } from "@/lib/admin-session";
 
-export type AdminUploadEntityType = "teacher" | "student" | "proctor" | "learner";
+export type AdminUploadEntityType = "teacher" | "proctor" | "learner";
 
 type EntityConfig = {
   title: string;
@@ -28,14 +28,6 @@ const ENTITY_CONFIG: Record<AdminUploadEntityType, EntityConfig> = {
     successTitle: "Teacher Added!",
     addAnotherLabel: "Add Another Teacher",
     icon: "🧑‍🏫",
-  },
-  student: {
-    title: "Add Student",
-    description: "Register a new student with profile details and photo.",
-    submitLabel: "Add Student →",
-    successTitle: "Student Added!",
-    addAnotherLabel: "Add Another Student",
-    icon: "🧒",
   },
   proctor: {
     title: "Add Proctor",
@@ -206,14 +198,9 @@ export function AdminEntityUploadPage({ entityType }: AdminEntityUploadPageProps
           role: entityType,
           name: formData.name,
           phone: formData.phone,
+          qualification: formData.qualification,
           ...photoFields,
         };
-
-        if (entityType === "student") {
-          body.standard = formData.standard;
-        } else {
-          body.qualification = formData.qualification;
-        }
 
         res = await fetch("/api/register", {
           method: "POST",
@@ -407,7 +394,7 @@ export function AdminEntityUploadPage({ entityType }: AdminEntityUploadPageProps
             />
           </div>
 
-          {entityType === "student" || entityType === "learner" ? (
+          {entityType === "learner" ? (
             <div>
               <label className="block text-sm font-medium mb-2">
                 Standard / Class <span className="text-destructive">*</span>

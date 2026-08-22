@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const teacherFindManyMock = vi.fn();
-const studentFindManyMock = vi.fn();
+const learnerFindManyMock = vi.fn();
 const proctorFindManyMock = vi.fn();
 const sponsorOrderFindManyMock = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   getPrisma: () => ({
     teacher: { findMany: teacherFindManyMock },
-    student: { findMany: studentFindManyMock },
+    learner: { findMany: learnerFindManyMock },
     proctor: { findMany: proctorFindManyMock },
     sponsorOrder: { findMany: sponsorOrderFindManyMock },
   }),
@@ -22,7 +22,7 @@ describe("GET /api/admin", () => {
     vi.resetModules();
     process.env = { ...originalEnv, ADMIN_SECRET: "test-secret-123" };
     teacherFindManyMock.mockResolvedValue([]);
-    studentFindManyMock.mockResolvedValue([]);
+    learnerFindManyMock.mockResolvedValue([]);
     proctorFindManyMock.mockResolvedValue([]);
     sponsorOrderFindManyMock.mockResolvedValue([]);
   });
@@ -65,12 +65,12 @@ describe("GET /api/admin", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       teachers: [],
-      students: [],
+      learners: [],
       proctors: [],
       sponsors: [],
     });
     expect(teacherFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
-    expect(studentFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
+    expect(learnerFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
     expect(proctorFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
     expect(sponsorOrderFindManyMock).toHaveBeenCalledWith({
       orderBy: { createdAt: "desc" },
