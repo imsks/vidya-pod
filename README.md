@@ -50,11 +50,11 @@ npm run dev
 
 ## Make commands
 
-| Command        | Description                                              |
-| -------------- | -------------------------------------------------------- |
-| `make up`      | Build and start app + Postgres (detached)                |
-| `make stop`    | Stop all containers                                      |
-| `make migrate` | Apply Prisma migrations on host (uses `.env`, localhost) |
+| Command        | Description                                                   |
+| -------------- | ------------------------------------------------------------- |
+| `make up`      | Build and start app + Postgres (detached)                     |
+| `make stop`    | Stop all containers                                           |
+| `make migrate` | Apply migrations on host (`npm run db:migrate`, localhost DB) |
 
 Env files: `.env` for Docker Compose, `.env.local` for host Next.js dev.
 
@@ -69,24 +69,24 @@ Reset the database: `make stop && docker compose down -v && make up`
 
 ## Scripts
 
-| Command                     | Description                                     |
-| --------------------------- | ----------------------------------------------- |
-| `npm run dev`               | Next.js dev server (host)                       |
-| `npm run build`             | Production build                                |
-| `npm run start`             | Serve production build                          |
-| `npm run lint`              | ESLint check                                    |
-| `npm run lint:fix`          | ESLint with autofix                             |
-| `npm run format`            | Prettier write                                  |
-| `npm run format:check`      | Prettier check (CI)                             |
-| `npm run typecheck`         | TypeScript `--noEmit`                           |
-| `npm run quality:check`     | format + lint + typecheck + coverage            |
-| `npm run test`              | Unit + integration (Vitest)                     |
-| `npm run test:watch`        | Vitest watch mode                               |
-| `npm run test:coverage`     | Coverage with thresholds (`src/lib`, constants) |
-| `npm run test:e2e`          | Playwright E2E (Chromium)                       |
-| `npm run db:migrate`        | Create/apply Prisma migrations (dev)            |
-| `npm run db:migrate:deploy` | Apply migrations (CI)                           |
-| `npm run db:studio`         | Prisma Studio                                   |
+| Command                  | Description                                     |
+| ------------------------ | ----------------------------------------------- |
+| `npm run dev`            | Next.js dev server (host)                       |
+| `npm run build`          | Production build                                |
+| `npm run start`          | Serve production build                          |
+| `npm run lint`           | ESLint check                                    |
+| `npm run lint:fix`       | ESLint with autofix                             |
+| `npm run format`         | Prettier write                                  |
+| `npm run format:check`   | Prettier check (CI)                             |
+| `npm run typecheck`      | TypeScript `--noEmit`                           |
+| `npm run quality:check`  | format + lint + typecheck + coverage            |
+| `npm run test`           | Unit + integration (Vitest)                     |
+| `npm run test:watch`     | Vitest watch mode                               |
+| `npm run test:coverage`  | Coverage with thresholds (`src/lib`, constants) |
+| `npm run test:e2e`       | Playwright E2E (Chromium)                       |
+| `npm run db:migrate`     | Apply pending migrations (local + production)   |
+| `npm run db:migrate:dev` | Create a new migration after schema changes     |
+| `npm run db:studio`      | Prisma Studio                                   |
 
 Pre-commit runs `lint-staged` (ESLint `--fix` + Prettier) via Husky.
 
