@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SponsorOrderStatus } from "@/generated/prisma";
+import { buildCashfreeHeaders, getCashfreeBaseUrl } from "@/lib/cashfree/config";
 import { getPrisma } from "@/lib/prisma";
 import { checkLearnerAvailableForSponsorship } from "@/lib/sponsorship/validate-learner-available";
 import { createSponsorOrderId, parseSponsorBody } from "@/lib/validation/sponsor";
@@ -24,14 +25,9 @@ export async function POST(request: Request) {
 
     const orderId = createSponsorOrderId();
 
-    const cashfreeRes = await fetch(`${process.env.CASHFREE_BASE_URL}/orders`, {
+    const cashfreeRes = await fetch(`${getCashfreeBaseUrl()}/orders`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-version": "2023-08-01",
-        "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-        "x-client-secret": process.env.CASHFREE_SECRET_KEY!,
-      },
+      headers: buildCashfreeHeaders(),
       body: JSON.stringify({
         order_id: orderId,
         order_amount: amount,
