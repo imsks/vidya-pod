@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Proctor, SponsorOrder, Student, Teacher } from "@/generated/prisma";
+import { getAdminSecretFromRequest, validateAdminSecret } from "@/lib/admin-auth";
 import { getPrisma } from "@/lib/prisma";
 
 const mapTeacher = (teacher: Teacher) => ({
@@ -48,8 +49,13 @@ const mapSponsorOrder = (order: SponsorOrderWithLearner) => ({
   created_at: order.createdAt.toISOString(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const adminSecret = getAdminSecretFromRequest(request);
+    if (!validateAdminSecret(adminSecret)) {
+      return NextResponse.json({ error: "Unauthorized: Invalid admin PIN" }, { status: 401 });
+    }
+
     const prisma = getPrisma();
     const [teachers, students, proctors, sponsors] = await Promise.all([
       prisma.teacher.findMany({ orderBy: { createdAt: "desc" } }),

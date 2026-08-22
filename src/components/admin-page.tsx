@@ -10,18 +10,16 @@ import type {
   TeacherRecord,
 } from "@/types/admin";
 
-const ADMIN_ID = "sachin";
-const ADMIN_PASSWORD = "sachin";
-
 type Tab = "teachers" | "students" | "proctors" | "sponsors";
 
 const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateString("en-IN") : "—");
 
 export function AdminPage() {
   const [loggedIn, setLoggedIn] = useState(false);
-  const [loginId, setLoginId] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [adminPin, setAdminPin] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [sessionPin, setSessionPin] = useState("");
 
   const [activeTab, setActiveTab] = useState<Tab>("teachers");
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
@@ -30,13 +28,38 @@ export function AdminPage() {
   const [sponsors, setSponsors] = useState<SponsorOrderRecord[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginId === ADMIN_ID && loginPassword === ADMIN_PASSWORD) {
+    const trimmedPin = adminPin.trim();
+
+    if (!trimmedPin) {
+      setLoginError("Please enter the admin PIN");
+      return;
+    }
+
+    setLoginLoading(true);
+    setLoginError("");
+
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ admin_secret: trimmedPin }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setLoginError(data.error || "Invalid admin PIN");
+        return;
+      }
+
+      setSessionPin(trimmedPin);
       setLoggedIn(true);
-      setLoginError("");
-    } else {
-      setLoginError("Invalid credentials");
+      setAdminPin("");
+    } catch {
+      setLoginError("Unable to sign in. Please try again.");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -45,7 +68,9 @@ export function AdminPage() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/admin");
+        const res = await fetch("/api/admin", {
+          headers: { "x-admin-secret": sessionPin },
+        });
         if (!res.ok) throw new Error("Failed to fetch");
         const data = (await res.json()) as AdminDashboardData;
         setTeachers(data.teachers ?? []);
@@ -59,7 +84,7 @@ export function AdminPage() {
       }
     };
     loadData();
-  }, [loggedIn]);
+  }, [loggedIn, sessionPin]);
 
   if (!loggedIn) {
     return (
@@ -77,25 +102,13 @@ export function AdminPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">User ID</label>
-            <input
-              type="text"
-              required
-              value={loginId}
-              onChange={(e) => setLoginId(e.target.value)}
-              placeholder="Enter your ID"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Password</label>
+            <label className="block text-sm font-medium mb-2">Admin PIN</label>
             <input
               type="password"
               required
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              placeholder="Enter your password"
+              value={adminPin}
+              onChange={(e) => setAdminPin(e.target.value)}
+              placeholder="Enter admin PIN"
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
             />
           </div>
@@ -108,9 +121,10 @@ export function AdminPage() {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-gradient-hero text-primary-foreground px-6 py-3 font-bold shadow-glow hover:shadow-lift transition-all"
+            disabled={loginLoading}
+            className="w-full rounded-xl bg-gradient-hero text-primary-foreground px-6 py-3 font-bold shadow-glow hover:shadow-lift transition-all disabled:opacity-60"
           >
-            Login →
+            {loginLoading ? "Signing in..." : "Login →"}
           </button>
         </form>
       </div>
@@ -145,7 +159,10 @@ export function AdminPage() {
               + Register User
             </Link>
             <button
-              onClick={() => setLoggedIn(false)}
+              onClick={() => {
+                setLoggedIn(false);
+                setSessionPin("");
+              }}
               className="text-sm text-muted-foreground hover:text-foreground transition"
             >
               Logout
