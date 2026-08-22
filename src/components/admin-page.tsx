@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { clearAdminSessionPin, setAdminSessionPin } from "@/lib/admin-session";
 import type {
   AdminDashboardData,
   ProctorRecord,
@@ -54,6 +55,7 @@ export function AdminPage() {
       }
 
       setSessionPin(trimmedPin);
+      setAdminSessionPin(trimmedPin);
       setLoggedIn(true);
       setAdminPin("");
     } catch {
@@ -151,17 +153,36 @@ export function AdminPage() {
             <span className="inline-block w-8 h-8 rounded-xl bg-gradient-hero shadow-glow" />
             <span className="font-display font-bold text-xl">Vidya Pods Admin</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
-              href="/register"
+              href="/admin/teacher"
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
+            >
+              + Teacher
+            </Link>
+            <Link
+              href="/admin/student"
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
+            >
+              + Student
+            </Link>
+            <Link
+              href="/admin/proctor"
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
+            >
+              + Proctor
+            </Link>
+            <Link
+              href="/admin/learner"
               className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2 text-sm font-semibold hover:shadow-lift transition-all"
             >
-              + Register User
+              + Learner
             </Link>
             <button
               onClick={() => {
                 setLoggedIn(false);
                 setSessionPin("");
+                clearAdminSessionPin();
               }}
               className="text-sm text-muted-foreground hover:text-foreground transition"
             >
@@ -197,6 +218,39 @@ export function AdminPage() {
             </button>
           ))}
         </div>
+
+        {activeTab !== "sponsors" && (
+          <div className="mb-6">
+            <Link
+              href={
+                activeTab === "teachers"
+                  ? "/admin/teacher"
+                  : activeTab === "students"
+                    ? "/admin/student"
+                    : "/admin/proctor"
+              }
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:shadow-lift transition-all"
+            >
+              + Add{" "}
+              {activeTab === "teachers"
+                ? "Teacher"
+                : activeTab === "students"
+                  ? "Student"
+                  : "Proctor"}
+            </Link>
+          </div>
+        )}
+
+        {activeTab === "sponsors" && (
+          <div className="mb-6">
+            <Link
+              href="/admin/learner"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:shadow-lift transition-all"
+            >
+              + Add Learner
+            </Link>
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-20 text-muted-foreground">Loading...</div>

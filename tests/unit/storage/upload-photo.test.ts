@@ -4,6 +4,11 @@ import { PhotoUploadError } from "@/lib/storage/errors";
 
 const storageUploadMock = vi.fn();
 const storageGetPublicUrlMock = vi.fn();
+const ensurePhotosBucketMock = vi.fn();
+
+vi.mock("@/lib/storage/ensure-photos-bucket", () => ({
+  ensurePhotosBucket: () => ensurePhotosBucketMock(),
+}));
 
 vi.mock("@/lib/supabase", () => ({
   getSupabaseAdmin: () => ({
@@ -28,6 +33,7 @@ describe("uploadEntityPhoto", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
+    ensurePhotosBucketMock.mockResolvedValue(undefined);
     storageUploadMock.mockResolvedValue({
       data: { path: "learners/123-photo.jpg" },
       error: null,

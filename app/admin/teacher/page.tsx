@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { AdminEntityUploadPage } from "@/components/admin-entity-upload-page";
 
 export const metadata: Metadata = {
-  title: "Add Learner — Vidya Pods Admin",
-  description: "Admin page to add a learner",
+  title: "Add Teacher — Vidya Pods Admin",
+  description: "Admin page to add a teacher",
 };
 
 export default function Page() {
-  return <AdminEntityUploadPage entityType="learner" />;
+  return <AdminEntityUploadPage entityType="teacher" />;
 }

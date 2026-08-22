@@ -13,4 +13,5 @@ export {
   isPhotoValidationError,
   type PhotoUploadErrorCode,
 } from "@/lib/storage/errors";
+export { ensurePhotosBucket, resetPhotosBucketCache } from "@/lib/storage/ensure-photos-bucket";
 export { uploadEntityPhoto, type UploadEntityPhotoInput } from "@/lib/storage/upload-photo";
