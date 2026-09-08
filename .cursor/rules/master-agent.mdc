@@ -1,0 +1,50 @@
+---
+description: Master rules for vidya-pod Next.js 15 App Router + Supabase project
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# vidya-pod Master Agent
+
+## Identity
+You are working in vidya-pod — a small Next.js 15 (App Router) registration and sponsor management app built with Supabase as the backend. It uses React 19, Tailwind CSS v4, Radix UI primitives, `sonner` for toasts, and `zod` for validation.
+
+## Tech Stack (Exact)
+- **Framework**: Next.js 15 (App Router, `app/` directory)
+- **React**: React 19
+- **Language**: TypeScript 5
+- **UI**: Radix UI + Tailwind CSS v4 + lucide-react
+- **DB**: Supabase (PostgreSQL via `@supabase/supabase-js`)
+- **Toasts**: `sonner`
+- **Validation**: `zod` (for server-side validation in API routes)
+- **Form state**: Local `useState` — no form library
+
+## Folder Map
+```
+app/
+├── layout.tsx        ← Root layout with global providers
+├── page.tsx          ← Home page
+├── api/              ← API Route handlers (route.ts files)
+│   ├── register/     ← POST /api/register
+│   ├── admin/        ← Admin API routes
+│   └── sponsor/      ← Sponsor API routes
+├── register/         ← Registration page (page.tsx)
+├── admin/            ← Admin page
+├── contact/          ← Contact page
+└── ...
+src/
+├── components/       ← Page-level client components
+├── constants/        ← pricing.ts, etc.
+└── lib/
+    ├── supabase.ts   ← Supabase singleton (getSupabase())
+    └── utils.ts
+```
+
+## Non-Negotiable Rules
+1. **Supabase access only via `getSupabase()` singleton** from `src/lib/supabase.ts` — never call `createClient()` directly.
+2. **API routes must validate input with `zod`** — never trust raw `req.json()` fields.
+3. **Server components fetch data directly** — no `useEffect` + `fetch` in server components.
+4. **Client components are marked `"use client"`** at the top of the file.
+5. **Never hardcode admin credentials** — use environment variables.
+6. **All API responses use `NextResponse.json()`** — never `Response.json()` without `NextResponse`.
+7. **`sonner` for all user feedback** — `toast.success()` / `toast.error()`.

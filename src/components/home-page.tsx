@@ -76,6 +76,8 @@ function Counter({
   );
 }
 
+import { UserMenu } from "@/components/auth/user-menu";
+
 function Nav() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/70 border-b border-border/60">
@@ -101,12 +103,15 @@ function Nav() {
             Sponsor
           </Link>
         </nav>
-        <Link
-          href="/sponsor"
-          className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
-        >
-          Sponsor →
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/sponsor"
+            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2 text-sm font-semibold hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105"
+          >
+            Sponsor →
+          </Link>
+          <UserMenu />
+        </div>
       </div>
     </header>
   );

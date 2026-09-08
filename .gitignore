@@ -1,3 +1,36 @@
+# Dependencies
+/node_modules
+/.pnpm
+/.yarn
+
+# Build & Next.js outputs
+/.next/
+/out/
+/build/
+/dist/
+tsconfig.tsbuildinfo
+
+# Environment files and secrets (NEVER COMMIT SECRETS)
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+.env.staging
+*.env
+*.pem
+*.key
+credentials.json
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Prisma
+src/generated/prisma
+
 # Logs
 logs
 *.log
@@ -7,18 +40,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-.next
-out
-*.local
-
-# env
-.env
-.env.local
-.env.production
-
-# Editor directories and files
+# Editor & OS files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -28,12 +50,4 @@ out
 *.njsproj
 *.sln
 *.sw?
-
-# Testing
-coverage/
-playwright-report/
-test-results/
-tsconfig.tsbuildinfo
-
-# Prisma
-src/generated/prisma
+.tmp

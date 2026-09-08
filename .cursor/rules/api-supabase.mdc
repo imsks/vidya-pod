@@ -1,0 +1,143 @@
+---
+description: Rules for Next.js 15 App Router API routes and Supabase data access in vidya-pod
+globs: ["app/api/**/*.ts", "src/lib/**/*.ts"]
+alwaysApply: false
+---
+
+# vidya-pod API Routes & Supabase Skill
+
+## Purpose
+vidya-pod uses Next.js 15 App Router `route.ts` handlers with Supabase for data. This skill ensures all API routes validate input with Zod, handle Supabase errors, and return consistent `NextResponse.json()` responses.
+
+## Rules
+1. **All API routes validate body with `zod`** before any Supabase call.
+2. **Use `getSupabase()` from `@/lib/supabase`** — never `createClient()` directly in route files.
+3. **Always check `result.error`** after Supabase operations and return appropriate status codes.
+4. **Use `NextResponse.json()` for all responses** with explicit `{ status: N }` option.
+5. **Required field errors return `400`**, Supabase errors return `500`, not-found returns `404`.
+6. **Wrap entire handler in `try/catch`** — catch block returns `{ error: "Internal server error" }` with status 500.
+7. **Role validation is an enum check** — `["teacher", "student", "proctor"].includes(role)`.
+8. **Never log sensitive data** (phone numbers, names) in `console.error` — log only error messages.
+9. **Supabase tables are lowercase snake_case** — `students`, `teachers`, `proctors`.
+10. **`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`** are the only Supabase env vars — never use the service role key client-side.
+
+## Patterns
+
+### Standard POST route with Zod validation
+```ts
+// app/api/register/route.ts
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { getSupabase } from "@/lib/supabase";
+
+const registerSchema = z.discriminatedUnion("role", [
+  z.object({
+    role: z.literal("student"),
+    name: z.string().min(1, "Name is required"),
+    phone: z.string().min(10, "Valid phone required"),
+    standard: z.string().min(1, "Standard is required"),
+    image_url: z.string().url().optional(),
+  }),
+  z.object({
+    role: z.enum(["teacher", "proctor"]),
+    name: z.string().min(1, "Name is required"),
+    phone: z.string().min(10, "Valid phone required"),
+    qualification: z.string().min(1, "Qualification is required"),
+    image_url: z.string().url().optional(),
+  }),
+]);
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const parsed = registerSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors[0].message },
+        { status: 400 },
+      );
+    }
+
+    const supabase = getSupabase();
+    const data = parsed.data;
+    const table = data.role === "student" ? "students" : data.role === "teacher" ? "teachers" : "proctors";
+    
+    const result = await supabase.from(table).insert(data);
+
+    if (result.error) {
+      return NextResponse.json({ error: result.error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error("Register route error:", (e as Error).message);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+```
+
+### Supabase singleton
+```ts
+// src/lib/supabase.ts
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+let _supabase: SupabaseClient | null = null;
+
+export function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error("Supabase environment variables are not set");
+    }
+    
+    _supabase = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return _supabase;
+}
+```
+
+## Anti-Patterns
+
+### ❌ Missing Zod validation
+```ts
+// BAD
+export async function POST(request: Request) {
+  const { role, name, phone } = await request.json();
+  if (!role || !name || !phone) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+  // no type safety — role could be anything
+}
+```
+```ts
+// GOOD — use Zod schema (see above pattern)
+const parsed = registerSchema.safeParse(body);
+if (!parsed.success) { return NextResponse.json({ error: ... }, { status: 400 }); }
+```
+
+### ❌ Direct createClient in route file
+```ts
+// BAD
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, ...);
+```
+```ts
+// GOOD
+import { getSupabase } from "@/lib/supabase";
+const supabase = getSupabase();
+```
+
+### ❌ Hardcoded admin credentials (SECURITY ISSUE — exists in codebase)
+```ts
+// BAD — found in src/components/register-page.tsx
+const ADMIN_ID = "sachin";
+const ADMIN_PASSWORD = "sachin";
+```
+```ts
+// GOOD — use environment variables
+const ADMIN_ID = process.env.NEXT_PUBLIC_ADMIN_ID;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; // server-side only if possible
+```
