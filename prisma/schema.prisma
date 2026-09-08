@@ -31,14 +31,15 @@ model Sponsor {
 
 /// Learners - Students/learners using the platform
 model Learner {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String
   phone     String
   standard  String
-  imageUrl  String?  @map("image_url")
-  sponsorId String?  @map("sponsor_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  sponsor   Sponsor? @relation(fields: [sponsorId], references: [id])
+  imageUrl  String?        @map("image_url")
+  sponsorId String?        @map("sponsor_id") @db.Uuid
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  sponsor   Sponsor?       @relation(fields: [sponsorId], references: [id])
+  orders    SponsorOrder[]
 
   @@index([sponsorId])
   @@map("learners")
@@ -93,26 +94,13 @@ model SponsorOrder {
   status           SponsorOrderStatus @default(PENDING)
   paymentSessionId String?            @map("payment_session_id")
   sponsorId        String?            @map("sponsor_id") @db.Uuid
+  learnerId        String?            @map("learner_id") @db.Uuid
   createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz
   sponsor          Sponsor?           @relation(fields: [sponsorId], references: [id])
+  learner          Learner?           @relation(fields: [learnerId], references: [id])
 
   @@index([sponsorId])
+  @@index([learnerId])
   @@index([status])
   @@map("sponsor_orders")
-}
-
-// ============================================
-// LEGACY MODELS (for backward compatibility)
-// ============================================
-
-/// Students - Legacy table (use Learner for new development)
-model Student {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  phone     String
-  standard  String
-  imageUrl  String?  @map("image_url")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-
-  @@map("students")
 }

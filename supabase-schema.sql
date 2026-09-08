@@ -59,20 +59,7 @@ CREATE TABLE IF NOT EXISTS sponsor_orders (
   status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED')),
   payment_session_id TEXT,
   sponsor_id UUID REFERENCES sponsors(id),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ============================================
--- LEGACY TABLES (for backward compatibility)
--- ============================================
-
--- Students table (legacy - use learners for new development)
-CREATE TABLE IF NOT EXISTS students (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  standard TEXT NOT NULL,
-  image_url TEXT,
+  learner_id UUID REFERENCES learners(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -86,7 +73,6 @@ ALTER TABLE learners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teachers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE proctors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sponsor_orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- POLICIES - Allow public access (for registration/admin)
@@ -98,7 +84,6 @@ CREATE POLICY "Allow public insert" ON learners FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public insert" ON teachers FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public insert" ON proctors FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public insert" ON sponsor_orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public insert" ON students FOR INSERT WITH CHECK (true);
 
 -- Read policies
 CREATE POLICY "Allow public read" ON sponsors FOR SELECT USING (true);
@@ -106,7 +91,6 @@ CREATE POLICY "Allow public read" ON learners FOR SELECT USING (true);
 CREATE POLICY "Allow public read" ON teachers FOR SELECT USING (true);
 CREATE POLICY "Allow public read" ON proctors FOR SELECT USING (true);
 CREATE POLICY "Allow public read" ON sponsor_orders FOR SELECT USING (true);
-CREATE POLICY "Allow public read" ON students FOR SELECT USING (true);
 
 -- Update policies
 CREATE POLICY "Allow public update" ON sponsors FOR UPDATE USING (true);
@@ -119,6 +103,7 @@ CREATE POLICY "Allow public update" ON sponsor_orders FOR UPDATE USING (true);
 
 CREATE INDEX IF NOT EXISTS idx_learners_sponsor_id ON learners(sponsor_id);
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_sponsor_id ON sponsor_orders(sponsor_id);
+CREATE INDEX IF NOT EXISTS idx_sponsor_orders_learner_id ON sponsor_orders(learner_id);
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_status ON sponsor_orders(status);
 
 -- ============================================
@@ -127,6 +112,5 @@ CREATE INDEX IF NOT EXISTS idx_sponsor_orders_status ON sponsor_orders(status);
 
 -- Add image_url column to existing tables if not exists
 ALTER TABLE teachers ADD COLUMN IF NOT EXISTS image_url TEXT;
-ALTER TABLE students ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE proctors ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE sponsor_orders ADD COLUMN IF NOT EXISTS image_url TEXT;

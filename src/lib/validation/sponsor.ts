@@ -9,6 +9,7 @@ export const sponsorSchema = z.object({
   phone: z.string().trim().min(1, "Phone is required"),
   plan: z.enum(sponsorPlans),
   amount: z.number().positive("Amount must be positive"),
+  learner_id: z.string().uuid("Valid learner ID is required"),
 });
 
 export type SponsorInput = z.infer<typeof sponsorSchema>;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import type { Proctor, SponsorOrder, Student, Teacher } from "@/generated/prisma";
+import type { Learner, Proctor, SponsorOrder, Teacher } from "@/generated/prisma";
+import { getAdminSecretFromRequest, validateAdminSecret } from "@/lib/admin-auth";
 import { getPrisma } from "@/lib/prisma";
 
 const mapTeacher = (teacher: Teacher) => ({
@@ -11,13 +12,14 @@ const mapTeacher = (teacher: Teacher) => ({
   created_at: teacher.createdAt.toISOString(),
 });
 
-const mapStudent = (student: Student) => ({
-  id: student.id,
-  name: student.name,
-  phone: student.phone,
-  standard: student.standard,
-  image_url: student.imageUrl,
-  created_at: student.createdAt.toISOString(),
+const mapLearner = (learner: Learner) => ({
+  id: learner.id,
+  name: learner.name,
+  phone: learner.phone,
+  standard: learner.standard,
+  image_url: learner.imageUrl,
+  sponsor_id: learner.sponsorId,
+  created_at: learner.createdAt.toISOString(),
 });
 
 const mapProctor = (proctor: Proctor) => ({
@@ -29,7 +31,11 @@ const mapProctor = (proctor: Proctor) => ({
   created_at: proctor.createdAt.toISOString(),
 });
 
-const mapSponsorOrder = (order: SponsorOrder) => ({
+type SponsorOrderWithLearner = SponsorOrder & {
+  learner: { id: string; name: string } | null;
+};
+
+const mapSponsorOrder = (order: SponsorOrderWithLearner) => ({
   id: order.id,
   order_id: order.orderId,
   name: order.name,
@@ -39,22 +45,36 @@ const mapSponsorOrder = (order: SponsorOrder) => ({
   amount: order.amount,
   status: order.status,
   payment_session_id: order.paymentSessionId,
+  learner_id: order.learnerId,
+  learner_name: order.learner?.name ?? null,
   created_at: order.createdAt.toISOString(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const adminSecret = getAdminSecretFromRequest(request);
+    if (!validateAdminSecret(adminSecret)) {
+      return NextResponse.json({ error: "Unauthorized: Invalid admin PIN" }, { status: 401 });
+    }
+
     const prisma = getPrisma();
-    const [teachers, students, proctors, sponsors] = await Promise.all([
+    const [teachers, learners, proctors, sponsors] = await Promise.all([
       prisma.teacher.findMany({ orderBy: { createdAt: "desc" } }),
-      prisma.student.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.learner.findMany({ orderBy: { createdAt: "desc" } }),
       prisma.proctor.findMany({ orderBy: { createdAt: "desc" } }),
-      prisma.sponsorOrder.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.sponsorOrder.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+          learner: {
+            select: { id: true, name: true },
+          },
+        },
+      }),
     ]);
 
     return NextResponse.json({
       teachers: teachers.map(mapTeacher),
-      students: students.map(mapStudent),
+      learners: learners.map(mapLearner),
       proctors: proctors.map(mapProctor),
       sponsors: sponsors.map(mapSponsorOrder),
     });

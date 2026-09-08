@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { SponsorOrderStatus } from "@/generated/prisma";
+import { buildCashfreeHeaders, getCashfreeBaseUrl } from "@/lib/cashfree/config";
 import { getPrisma } from "@/lib/prisma";
+import { checkLearnerAvailableForSponsorship } from "@/lib/sponsorship/validate-learner-available";
 import { createSponsorOrderId, parseSponsorBody } from "@/lib/validation/sponsor";
 
 export async function POST(request: Request) {
@@ -12,17 +14,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: parsed.error }, { status: parsed.status });
     }
 
-    const { name, email, phone, plan, amount } = parsed.data;
+    const { name, email, phone, plan, amount, learner_id: learnerId } = parsed.data;
+    const prisma = getPrisma();
+
+    const availability = await checkLearnerAvailableForSponsorship(prisma, learnerId);
+    if (!availability.available) {
+      const status = availability.reason === "not_found" ? 404 : 409;
+      return NextResponse.json({ error: availability.message }, { status });
+    }
+
     const orderId = createSponsorOrderId();
 
-    const cashfreeRes = await fetch(`${process.env.CASHFREE_BASE_URL}/orders`, {
+    const cashfreeRes = await fetch(`${getCashfreeBaseUrl()}/orders`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-version": "2023-08-01",
-        "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-        "x-client-secret": process.env.CASHFREE_SECRET_KEY!,
-      },
+      headers: buildCashfreeHeaders(),
       body: JSON.stringify({
         order_id: orderId,
         order_amount: amount,
@@ -34,7 +39,7 @@ export async function POST(request: Request) {
           customer_phone: phone,
         },
         order_meta: {
-          return_url: `${process.env.NEXT_PUBLIC_APP_URL}/sponsor?order_id=${orderId}`,
+          return_url: `${process.env.NEXT_PUBLIC_APP_URL}/sponsor/thank-you?order_id=${orderId}`,
         },
       }),
     });
@@ -47,7 +52,6 @@ export async function POST(request: Request) {
 
     const cashfreeData = await cashfreeRes.json();
 
-    const prisma = getPrisma();
     await prisma.sponsorOrder.create({
       data: {
         orderId,
@@ -58,6 +62,7 @@ export async function POST(request: Request) {
         amount,
         status: SponsorOrderStatus.PENDING,
         paymentSessionId: cashfreeData.payment_session_id,
+        learnerId,
       },
     });
 

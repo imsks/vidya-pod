@@ -22,10 +22,8 @@
     "quality:check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage",
     "prepare": "husky",
     "test:all": "npm run test && npm run test:e2e",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },

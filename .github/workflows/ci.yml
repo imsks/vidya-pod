@@ -15,6 +15,7 @@ concurrency:
 env:
   NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-anon-key
+  SUPABASE_SECRET_KEY: test-secret-key
   NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
   CASHFREE_CLIENT_ID: test-client-id
   CASHFREE_SECRET_KEY: test-secret-key

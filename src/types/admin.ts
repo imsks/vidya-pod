@@ -7,12 +7,13 @@ export interface TeacherRecord {
   created_at?: string;
 }
 
-export interface StudentRecord {
+export interface LearnerRecord {
   id?: string;
   name: string;
   phone: string;
   standard?: string;
   image_url?: string | null;
+  sponsor_id?: string | null;
   created_at?: string;
 }
 
@@ -35,12 +36,14 @@ export interface SponsorOrderRecord {
   amount: number;
   status: string;
   payment_session_id?: string | null;
+  learner_id?: string | null;
+  learner_name?: string | null;
   created_at?: string;
 }
 
 export interface AdminDashboardData {
   teachers: TeacherRecord[];
-  students: StudentRecord[];
+  learners: LearnerRecord[];
   proctors: ProctorRecord[];
   sponsors: SponsorOrderRecord[];
 }

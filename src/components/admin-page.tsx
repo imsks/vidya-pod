@@ -2,41 +2,66 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { clearAdminSessionPin, setAdminSessionPin } from "@/lib/admin-session";
 import type {
   AdminDashboardData,
+  LearnerRecord,
   ProctorRecord,
   SponsorOrderRecord,
-  StudentRecord,
   TeacherRecord,
 } from "@/types/admin";
 
-const ADMIN_ID = "sachin";
-const ADMIN_PASSWORD = "sachin";
-
-type Tab = "teachers" | "students" | "proctors" | "sponsors";
+type Tab = "teachers" | "learners" | "proctors" | "sponsors";
 
 const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateString("en-IN") : "—");
 
 export function AdminPage() {
   const [loggedIn, setLoggedIn] = useState(false);
-  const [loginId, setLoginId] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [adminPin, setAdminPin] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [sessionPin, setSessionPin] = useState("");
 
   const [activeTab, setActiveTab] = useState<Tab>("teachers");
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
-  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [learners, setLearners] = useState<LearnerRecord[]>([]);
   const [proctors, setProctors] = useState<ProctorRecord[]>([]);
   const [sponsors, setSponsors] = useState<SponsorOrderRecord[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginId === ADMIN_ID && loginPassword === ADMIN_PASSWORD) {
+    const trimmedPin = adminPin.trim();
+
+    if (!trimmedPin) {
+      setLoginError("Please enter the admin PIN");
+      return;
+    }
+
+    setLoginLoading(true);
+    setLoginError("");
+
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ admin_secret: trimmedPin }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setLoginError(data.error || "Invalid admin PIN");
+        return;
+      }
+
+      setSessionPin(trimmedPin);
+      setAdminSessionPin(trimmedPin);
       setLoggedIn(true);
-      setLoginError("");
-    } else {
-      setLoginError("Invalid credentials");
+      setAdminPin("");
+    } catch {
+      setLoginError("Unable to sign in. Please try again.");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -45,11 +70,13 @@ export function AdminPage() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/admin");
+        const res = await fetch("/api/admin", {
+          headers: { "x-admin-secret": sessionPin },
+        });
         if (!res.ok) throw new Error("Failed to fetch");
         const data = (await res.json()) as AdminDashboardData;
         setTeachers(data.teachers ?? []);
-        setStudents(data.students ?? []);
+        setLearners(data.learners ?? []);
         setProctors(data.proctors ?? []);
         setSponsors(data.sponsors ?? []);
       } catch (err) {
@@ -59,7 +86,7 @@ export function AdminPage() {
       }
     };
     loadData();
-  }, [loggedIn]);
+  }, [loggedIn, sessionPin]);
 
   if (!loggedIn) {
     return (
@@ -77,25 +104,13 @@ export function AdminPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">User ID</label>
-            <input
-              type="text"
-              required
-              value={loginId}
-              onChange={(e) => setLoginId(e.target.value)}
-              placeholder="Enter your ID"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Password</label>
+            <label className="block text-sm font-medium mb-2">Admin PIN</label>
             <input
               type="password"
               required
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              placeholder="Enter your password"
+              value={adminPin}
+              onChange={(e) => setAdminPin(e.target.value)}
+              placeholder="Enter admin PIN"
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
             />
           </div>
@@ -108,9 +123,10 @@ export function AdminPage() {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-gradient-hero text-primary-foreground px-6 py-3 font-bold shadow-glow hover:shadow-lift transition-all"
+            disabled={loginLoading}
+            className="w-full rounded-xl bg-gradient-hero text-primary-foreground px-6 py-3 font-bold shadow-glow hover:shadow-lift transition-all disabled:opacity-60"
           >
-            Login →
+            {loginLoading ? "Signing in..." : "Login →"}
           </button>
         </form>
       </div>
@@ -119,7 +135,7 @@ export function AdminPage() {
 
   const tabs: { key: Tab; label: string; count: number; icon: string }[] = [
     { key: "teachers", label: "Teachers", count: teachers.length, icon: "🧑‍🏫" },
-    { key: "students", label: "Students", count: students.length, icon: "🧒" },
+    { key: "learners", label: "Learners", count: learners.length, icon: "🧒" },
     { key: "proctors", label: "Proctors", count: proctors.length, icon: "🛡️" },
     {
       key: "sponsors",
@@ -129,6 +145,24 @@ export function AdminPage() {
     },
   ];
 
+  const addHref =
+    activeTab === "teachers"
+      ? "/admin/teacher"
+      : activeTab === "learners"
+        ? "/admin/learner"
+        : activeTab === "proctors"
+          ? "/admin/proctor"
+          : "/admin/learner";
+
+  const addLabel =
+    activeTab === "teachers"
+      ? "Teacher"
+      : activeTab === "learners"
+        ? "Learner"
+        : activeTab === "proctors"
+          ? "Proctor"
+          : "Learner";
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/70 border-b border-border/60">
@@ -137,15 +171,31 @@ export function AdminPage() {
             <span className="inline-block w-8 h-8 rounded-xl bg-gradient-hero shadow-glow" />
             <span className="font-display font-bold text-xl">Vidya Pods Admin</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2 text-sm font-semibold hover:shadow-lift transition-all"
+              href="/admin/teacher"
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
             >
-              + Register User
+              + Teacher
+            </Link>
+            <Link
+              href="/admin/learner"
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
+            >
+              + Learner
+            </Link>
+            <Link
+              href="/admin/proctor"
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
+            >
+              + Proctor
             </Link>
             <button
-              onClick={() => setLoggedIn(false)}
+              onClick={() => {
+                setLoggedIn(false);
+                setSessionPin("");
+                clearAdminSessionPin();
+              }}
               className="text-sm text-muted-foreground hover:text-foreground transition"
             >
               Logout
@@ -181,6 +231,17 @@ export function AdminPage() {
           ))}
         </div>
 
+        {activeTab !== "sponsors" && (
+          <div className="mb-6">
+            <Link
+              href={addHref}
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:shadow-lift transition-all"
+            >
+              + Add {addLabel}
+            </Link>
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-20 text-muted-foreground">Loading...</div>
         ) : (
@@ -199,18 +260,19 @@ export function AdminPage() {
                 emptyMsg="No teachers registered yet"
               />
             )}
-            {activeTab === "students" && (
+            {activeTab === "learners" && (
               <DataTable
-                columns={["Image", "Name", "Phone", "Standard", "Registered"]}
-                rows={students.map((s) => [
-                  s.image_url || "",
-                  s.name,
-                  s.phone,
-                  `Class ${s.standard ?? "—"}`,
-                  formatDate(s.created_at),
+                columns={["Image", "Name", "Phone", "Class", "Sponsored", "Registered"]}
+                rows={learners.map((l) => [
+                  l.image_url || "",
+                  l.name,
+                  l.phone,
+                  `Class ${l.standard ?? "—"}`,
+                  l.sponsor_id ? "Yes" : "No",
+                  formatDate(l.created_at),
                 ])}
                 imageColumn={0}
-                emptyMsg="No students registered yet"
+                emptyMsg="No learners registered yet"
               />
             )}
             {activeTab === "proctors" && (
@@ -229,11 +291,11 @@ export function AdminPage() {
             )}
             {activeTab === "sponsors" && (
               <DataTable
-                columns={["Name", "Email", "Phone", "Plan", "Amount", "Status", "Date"]}
+                columns={["Name", "Email", "Learner", "Plan", "Amount", "Status", "Date"]}
                 rows={sponsors.map((s) => [
                   s.name,
                   s.email,
-                  s.phone,
+                  s.learner_name ?? "—",
                   s.plan,
                   `₹${s.amount}`,
                   s.status,

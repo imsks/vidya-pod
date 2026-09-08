@@ -374,82 +374,52 @@ type Person = { name: string; role: string; detail: string; emoji: string };
 const PEOPLE: Record<string, Person[]> = {
   Students: [
     {
-      name: "Aarav, 9",
-      role: "Grade 4 · Jaipur",
+      name: "Aarav, 5",
+      role: "Grade 1",
       detail: "Loves math puzzles and cricket.",
       emoji: "🧒",
     },
     {
-      name: "Ishita, 11",
-      role: "Grade 6 · Lucknow",
+      name: "Ishita, 8",
+      role: "Class 3",
       detail: "Dreams of becoming a doctor.",
       emoji: "👧",
     },
     {
-      name: "Rehan, 8",
-      role: "Grade 3 · Bhopal",
+      name: "Rehan, 10",
+      role: "Grade 4",
       detail: "Draws rockets in every notebook.",
       emoji: "🚀",
     },
     {
       name: "Priya, 12",
-      role: "Grade 7 · Patna",
+      role: "Grade 6",
       detail: "Topped her last science test.",
       emoji: "🌟",
     },
   ],
   Teachers: [
     {
-      name: "Neha Sharma",
-      role: "Science · Jaipur",
-      detail: "7 years of teaching kids she loves.",
+      name: "Parul",
+      role: "Science Teacher",
+      detail: "1 years of teaching kids she loves.",
       emoji: "🧑‍🏫",
-    },
-    {
-      name: "Ravi Kumar",
-      role: "Mathematics · Lucknow",
-      detail: "Former IIT coach, now a pod teacher.",
-      emoji: "👨‍🏫",
-    },
-    {
-      name: "Anita Das",
-      role: "English · Bhopal",
-      detail: "Turns grammar into storytelling.",
-      emoji: "📚",
     },
   ],
   Proctors: [
     {
-      name: "Meera Joshi",
-      role: "Rajasthan Lead",
-      detail: "Runs 12 pods across 3 cities.",
+      name: "Mahak",
+      role: "Lakhimpur Lead",
+      detail: "Runs teh first pod in Lakhimpur.",
       emoji: "🛡️",
-    },
-    {
-      name: "Suresh Iyer",
-      role: "UP Lead",
-      detail: "Ex-teacher. Now powers operations.",
-      emoji: "⚙️",
     },
   ],
   Sponsors: [
     {
       name: "Anonymous",
       role: "Yearly Sponsor",
-      detail: "Funds an entire pod in Patna.",
+      detail: "Funds First Pod.",
       emoji: "💛",
-    },
-    {
-      name: "The Khanna Family",
-      role: "Monthly Sponsors",
-      detail: "3 years strong. 2 pods supported.",
-      emoji: "🏡",
-    },
-    {
-      name: "Rohit M.",
-      role: "Yearly Sponsor",
-      detail: "In memory of his school teacher.",
-      emoji: "🌸",
     },
   ],
 };

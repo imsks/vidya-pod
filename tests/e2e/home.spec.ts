@@ -30,9 +30,8 @@ test.describe("Home Page", () => {
     await expect(page).toHaveURL(/sponsor/);
   });
 
-  test("register page is reachable", async ({ page }) => {
+  test("register route redirects to admin", async ({ page }) => {
     await page.goto("/register");
-    await expect(page).toHaveTitle(/Register/i);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page).toHaveURL(/\/admin$/);
   });
 });
