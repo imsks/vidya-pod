@@ -140,9 +140,9 @@ export function SponsorPage() {
                 }`}
               >
                 {p}
-                {p === "yearly" && (
+                {p === "yearly" && PRICING.yearly.savings && (
                   <span className="ml-2 text-xs text-accent">
-                    Save ₹6,000
+                    Save ₹{PRICING.yearly.savings.toLocaleString("en-IN")}
                   </span>
                 )}
               </button>
