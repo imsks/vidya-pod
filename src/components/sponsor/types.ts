@@ -40,5 +40,9 @@ export interface SponsorOrderStatusResponse {
       name: string;
       standard: string;
     } | null;
+    sponsor: {
+      name: string;
+      email: string;
+    } | null;
   };
 }
