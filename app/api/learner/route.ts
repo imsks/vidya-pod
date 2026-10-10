@@ -1,22 +1,8 @@
 import { NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
-import {
-  isPhotoUploadError,
-  isPhotoValidationError,
-  uploadEntityPhoto,
-} from "@/lib/storage";
+import { isPhotoUploadError, isPhotoValidationError, uploadEntityPhoto } from "@/lib/storage";
+import { validateAdminSecret } from "@/lib/admin-auth";
 import { parseLearnerBody } from "@/lib/validation/learner";
-
-// TODO: Remove this PIN-based authentication once RBAC is enabled.
-// This is a temporary solution for admin-only access to the learner upload endpoint.
-const validateAdminSecret = (secret: string | null): boolean => {
-  const adminSecret = process.env.ADMIN_SECRET;
-  if (!adminSecret) {
-    console.warn("ADMIN_SECRET environment variable is not set");
-    return false;
-  }
-  return secret === adminSecret;
-};
 
 export async function POST(request: Request) {
   try {

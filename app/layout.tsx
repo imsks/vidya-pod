@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import "@/styles.css";
 
 export const metadata: Metadata = {
-  title: "Vidya Pods — Free Home Tuitions for Every Child",
+  title: "Vidya Pods - Free Home Tuitions for Every Child",
   description:
     "A pod-based education system bringing free home tuitions to school-going kids. Sponsor a pod. Change a life.",
   authors: [{ name: "The Boring Education" }],
   openGraph: {
-    title: "Vidya Pods — Free Home Tuitions for Every Child",
+    title: "Vidya Pods - Free Home Tuitions for Every Child",
     description:
       "A pod-based education system bringing free home tuitions to school-going kids. Sponsor a pod. Change a life.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vidya Pods — Free Home Tuitions for Every Child",
+    title: "Vidya Pods - Free Home Tuitions for Every Child",
     description:
       "A pod-based education system bringing free home tuitions to school-going kids. Sponsor a pod. Change a life.",
   },

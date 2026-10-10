@@ -15,9 +15,9 @@ describe("verifyCashfreeWebhookSignature", () => {
   });
 
   it("returns false for an invalid signature", () => {
-    expect(
-      verifyCashfreeWebhookSignature("invalid", "1700000000", "{}", "webhook-secret"),
-    ).toBe(false);
+    expect(verifyCashfreeWebhookSignature("invalid", "1700000000", "{}", "webhook-secret")).toBe(
+      false,
+    );
   });
 
   it("returns false when headers or secret are missing", () => {

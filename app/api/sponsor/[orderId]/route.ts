@@ -1,16 +1,30 @@
 import { NextResponse } from "next/server";
+import { syncSponsorOrderFromCashfree } from "@/lib/cashfree/sync-sponsor-order";
 import { getPrisma } from "@/lib/prisma";
 
 type RouteContext = {
   params: Promise<{ orderId: string }>;
 };
 
+const orderSelect = {
+  orderId: true,
+  status: true,
+  plan: true,
+  amount: true,
+  learner: {
+    select: {
+      name: true,
+      standard: true,
+    },
+  },
+} as const;
+
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { orderId } = await context.params;
     const prisma = getPrisma();
 
-    const order = await prisma.sponsorOrder.findUnique({
+    let order = await prisma.sponsorOrder.findUnique({
       where: { orderId },
       select: {
         orderId: true,
@@ -34,6 +48,15 @@ export async function GET(_request: Request, context: RouteContext) {
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    if (order.status === "PENDING") {
+      await syncSponsorOrderFromCashfree(prisma, orderId);
+      order =
+        (await prisma.sponsorOrder.findUnique({
+          where: { orderId },
+          select: orderSelect,
+        })) ?? order;
     }
 
     return NextResponse.json({

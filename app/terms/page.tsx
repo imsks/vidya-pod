@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions — Vidya Pods",
+  title: "Terms & Conditions - Vidya Pods",
 };
 
 export default function TermsPage() {
@@ -37,15 +37,21 @@ export default function TermsPage() {
         </ul>
 
         <h2>3. Pricing</h2>
-        <p>All prices are listed in Indian Rupees (INR).</p>
+        <p>All prices are listed in Indian Rupees (INR). A sponsorship funds one student.</p>
         <ul>
           <li>
-            <strong>Monthly Sponsorship:</strong> ₹4,000/month
+            <strong>Monthly Sponsorship:</strong> ₹300/month - flexible, cancel anytime. Includes
+            monthly impact reports and direct thank-you notes from the student.
           </li>
           <li>
-            <strong>Yearly Sponsorship:</strong> ₹42,000/year (save ₹6,000)
+            <strong>Yearly Sponsorship:</strong> ₹3,600/year - a full academic year for one student.
+            Includes named sponsorship (optional) and a year-end documentary plus visit invite.
           </li>
         </ul>
+        <p>
+          Each ₹300/month sponsorship is allocated as ₹200 teacher salary, ₹50 stationery, and ₹50
+          proctor fee.
+        </p>
 
         <h2>4. Payment</h2>
         <p>
@@ -55,7 +61,7 @@ export default function TermsPage() {
 
         <h2>5. Use of Funds</h2>
         <p>
-          100% of sponsorship funds are allocated to pod operations — teacher salaries, books,
+          100% of sponsorship funds are allocated to pod operations - teacher salaries, books,
           stationery, and proctor fees. We do not use sponsorship funds for administrative overhead.
         </p>
 
@@ -67,7 +73,7 @@ export default function TermsPage() {
 
         <h2>7. Intellectual Property</h2>
         <p>
-          All content on this website — including text, graphics, logos, and design — is owned by
+          All content on this website - including text, graphics, logos, and design - is owned by
           The Boring Education and may not be reproduced without permission.
         </p>
 

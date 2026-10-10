@@ -134,7 +134,7 @@ function Hero() {
           </h1>
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl">
             Vidya Pods brings <strong className="text-foreground">free home tuitions</strong> to
-            school-going kids through tiny learning pods — run by real teachers, managed by
+            school-going kids through tiny learning pods - run by real teachers, managed by
             proctors, fuelled by sponsors like you.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
@@ -164,7 +164,7 @@ function Hero() {
               ))}
             </div>
             <span>
-              Join <strong className="text-foreground">120+ sponsors</strong> already powering pods.
+              Join <strong className="text-foreground">7+ sponsors</strong> already powering pods.
             </span>
           </div>
         </div>
@@ -186,7 +186,7 @@ function Hero() {
             <div>
               <div className="text-xs text-muted-foreground">Active Pods</div>
               <div className="font-bold text-lg">
-                <Counter to={47} />
+                <Counter to={2} />
               </div>
             </div>
           </div>
@@ -200,7 +200,7 @@ function Hero() {
             <div>
               <div className="text-xs text-muted-foreground">Kids Learning</div>
               <div className="font-bold text-lg">
-                <Counter to={312} />
+                <Counter to={15} />
               </div>
             </div>
           </div>
@@ -212,10 +212,9 @@ function Hero() {
 
 function Stats() {
   const stats = [
-    { n: 312, s: "+", label: "Kids Learning Free" },
-    { n: 47, s: "", label: "Active Pods" },
-    { n: 38, s: "", label: "Teachers Paid" },
-    { n: 9, s: "", label: "Cities Reached" },
+    { n: 15, s: "+", label: "Kids Learning Free" },
+    { n: 2, s: "", label: "Active Pods" },
+    { n: 1, s: "", label: "Teachers Paid" },
   ];
   return (
     <section
@@ -257,7 +256,7 @@ function HowItWorks() {
       icon: "🧑‍🏫",
       title: "The Teacher",
       color: "oklch(0.68 0.19 45)",
-      desc: "A local educator who teaches the pod 3–5 times a week. Gets paid fairly and on time — every month.",
+      desc: "A local educator who teaches the pod 3–5 times a week. Gets paid fairly and on time - every month.",
     },
     {
       icon: "🛡️",
@@ -369,82 +368,52 @@ type Person = { name: string; role: string; detail: string; emoji: string };
 const PEOPLE: Record<string, Person[]> = {
   Students: [
     {
-      name: "Aarav, 9",
-      role: "Grade 4 · Jaipur",
-      detail: "Loves math puzzles and cricket.",
+      name: "Aryan, 5",
+      role: "LKG",
+      detail: "Loves cricket.",
       emoji: "🧒",
     },
     {
-      name: "Ishita, 11",
-      role: "Grade 6 · Lucknow",
+      name: "Gauri, 9",
+      role: "Class 5",
       detail: "Dreams of becoming a doctor.",
       emoji: "👧",
     },
     {
-      name: "Rehan, 8",
-      role: "Grade 3 · Bhopal",
+      name: "Rehan, 10",
+      role: "Grade 4",
       detail: "Draws rockets in every notebook.",
       emoji: "🚀",
     },
     {
       name: "Priya, 12",
-      role: "Grade 7 · Patna",
+      role: "Grade 6",
       detail: "Topped her last science test.",
       emoji: "🌟",
     },
   ],
   Teachers: [
     {
-      name: "Neha Sharma",
-      role: "Science · Jaipur",
-      detail: "7 years of teaching kids she loves.",
+      name: "Parul",
+      role: "Science Teacher",
+      detail: "1 years of teaching kids she loves.",
       emoji: "🧑‍🏫",
-    },
-    {
-      name: "Ravi Kumar",
-      role: "Mathematics · Lucknow",
-      detail: "Former IIT coach, now a pod teacher.",
-      emoji: "👨‍🏫",
-    },
-    {
-      name: "Anita Das",
-      role: "English · Bhopal",
-      detail: "Turns grammar into storytelling.",
-      emoji: "📚",
     },
   ],
   Proctors: [
     {
-      name: "Meera Joshi",
-      role: "Rajasthan Lead",
-      detail: "Runs 12 pods across 3 cities.",
+      name: "Mahak",
+      role: "Lakhimpur Lead",
+      detail: "Runs teh first pod in Lakhimpur.",
       emoji: "🛡️",
-    },
-    {
-      name: "Suresh Iyer",
-      role: "UP Lead",
-      detail: "Ex-teacher. Now powers operations.",
-      emoji: "⚙️",
     },
   ],
   Sponsors: [
     {
       name: "Anonymous",
       role: "Yearly Sponsor",
-      detail: "Funds an entire pod in Patna.",
+      detail: "Funds First Pod.",
       emoji: "💛",
-    },
-    {
-      name: "The Khanna Family",
-      role: "Monthly Sponsors",
-      detail: "3 years strong. 2 pods supported.",
-      emoji: "🏡",
-    },
-    {
-      name: "Rohit M.",
-      role: "Yearly Sponsor",
-      detail: "In memory of his school teacher.",
-      emoji: "🌸",
     },
   ],
 };
@@ -519,13 +488,13 @@ function Tributes() {
       img: "/images/tribute-grandfather.jpg",
       name: "Srikant Shukla",
       by: "My Grandfather. My first Teacher.",
-      text: "He taught me that teaching is not a job — it is a gift you pass on. Every pod we run is because of him.",
+      text: "He taught me that teaching is not a job - it is a gift you pass on. Every pod we run is because of him.",
     },
     {
       img: "/images/tribute-kalam.jpg",
       name: "Dr. A.P.J. Abdul Kalam",
       by: "The People's President",
-      text: "From a newspaper boy in Rameswaram to India's missile man and President. He believed dreams are not what you see in sleep — they are what keep you from sleeping. For every child he inspired to dream big.",
+      text: "From a newspaper boy in Rameswaram to India's missile man and President. He believed dreams are not what you see in sleep - they are what keep you from sleeping. For every child he inspired to dream big.",
     },
     {
       img: "/images/tribute-savitribai.jpg",
@@ -610,8 +579,9 @@ function SponsorCTA() {
             <span className="text-gradient">Fuel a generation.</span>
           </h2>
           <p className="mt-6 text-lg md:text-xl opacity-80 max-w-2xl mx-auto">
-            A single pod costs ₹{PRICING.monthly.total.toLocaleString("en-IN")}/month — covering a
-            teacher, books, and 4–6 kids. Choose how you&apos;d like to give.
+            Sponsoring one student costs ₹{PRICING.monthly.total.toLocaleString("en-IN")}/month -
+            covering their share of a teacher, books, and a proctor. Choose how you&apos;d like to
+            give.
           </p>
         </Reveal>
 
@@ -681,7 +651,7 @@ function FAQ() {
   const items = [
     {
       q: "Where does my money actually go?",
-      a: "Teacher salaries, books, stationery, and a small share for the proctor. Zero goes to fancy offices — we don't have one.",
+      a: "Teacher salaries, books, stationery, and a small share for the proctor. Zero goes to fancy offices - we don't have one.",
     },
     {
       q: "Can I choose which pod I sponsor?",

@@ -8,6 +8,7 @@ import {
   type AllowedPhotoExtension,
   type StorageEntityType,
 } from "@/lib/storage/constants";
+import { ensurePhotosBucket } from "@/lib/storage/ensure-photos-bucket";
 import { PhotoUploadError } from "@/lib/storage/errors";
 
 export type UploadEntityPhotoInput = {
@@ -134,13 +135,17 @@ export const uploadEntityPhoto = async ({
 
   try {
     const supabase = getSupabaseAdmin();
+    await ensurePhotosBucket();
     const { data, error } = await supabase.storage.from(STORAGE_BUCKET).upload(storagePath, bytes, {
       contentType,
       upsert: false,
     });
 
     if (error) {
-      throw mapStorageError(error.message, "statusCode" in error ? String(error.statusCode) : undefined);
+      throw mapStorageError(
+        error.message,
+        "statusCode" in error ? String(error.statusCode) : undefined,
+      );
     }
 
     const {

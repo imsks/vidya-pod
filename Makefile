@@ -15,4 +15,4 @@ migrate:
 	set +a; \
 	DATABASE_URL=$$(printf '%s' "$$DATABASE_URL" | sed 's/@db:/@localhost:/'); \
 	export DATABASE_URL; \
-	npx prisma migrate deploy
+	npm run db:migrate

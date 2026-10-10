@@ -140,8 +140,6 @@ describe("webhook payload helpers", () => {
 
   it("detects payment failed webhook", () => {
     expect(isPaymentFailedWebhook({ type: "PAYMENT_FAILED_WEBHOOK" })).toBe(true);
-    expect(isPaymentFailedWebhook({ data: { payment: { payment_status: "FAILED" } } })).toBe(
-      true,
-    );
+    expect(isPaymentFailedWebhook({ data: { payment: { payment_status: "FAILED" } } })).toBe(true);
   });
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const registerRoles = ["teacher", "student", "proctor"] as const;
+export const registerRoles = ["teacher", "proctor"] as const;
 
 export type RegisterRole = (typeof registerRoles)[number];
 
@@ -12,22 +12,12 @@ const baseRegisterSchema = z.object({
 
 export const registerSchema = z.discriminatedUnion("role", [
   baseRegisterSchema.extend({
-    role: z.literal("student"),
-    standard: z
-      .string({ required_error: "Standard is required for students" })
-      .trim()
-      .min(1, "Standard is required for students"),
-    qualification: z.string().optional(),
-  }),
-  baseRegisterSchema.extend({
     role: z.literal("teacher"),
     qualification: z.string().trim().min(1, "Qualification is required"),
-    standard: z.string().optional(),
   }),
   baseRegisterSchema.extend({
     role: z.literal("proctor"),
     qualification: z.string().trim().min(1, "Qualification is required"),
-    standard: z.string().optional(),
   }),
 ]);
 
@@ -47,8 +37,7 @@ export const parseRegisterBody = (body: unknown): RegisterParseResult => {
   return { success: true, data: result.data };
 };
 
-export const getRegisterTable = (role: RegisterRole): "students" | "teachers" | "proctors" => {
-  if (role === "student") return "students";
+export const getRegisterTable = (role: RegisterRole): "teachers" | "proctors" => {
   if (role === "teacher") return "teachers";
   return "proctors";
 };
