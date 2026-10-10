@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Contact Us — Vidya Pods",
+  title: "Contact Us - Vidya Pods",
 };
 
 export default function ContactPage() {

@@ -351,7 +351,7 @@ function DataTable({
                       <img src={cell} alt="" className="w-9 h-9 rounded-full object-cover" />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                        —
+                        -
                       </div>
                     )
                   ) : columns[j] === "Status" ? (

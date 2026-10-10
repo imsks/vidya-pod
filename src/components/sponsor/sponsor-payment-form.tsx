@@ -97,7 +97,9 @@ export const SponsorPaymentForm = ({ learnerId, plan }: SponsorPaymentFormProps)
       </div>
 
       {error && (
-        <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm">{error}</div>
+        <div className="rounded-xl bg-destructive/10 text-destructive px-4 py-3 text-sm">
+          {error}
+        </div>
       )}
 
       <button

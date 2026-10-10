@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Refunds & Cancellations — Vidya Pods",
+  title: "Refunds & Cancellations - Vidya Pods",
 };
 
 export default function RefundsPage() {

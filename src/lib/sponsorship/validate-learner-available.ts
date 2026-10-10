@@ -2,8 +2,15 @@ import type { PrismaClient } from "@/generated/prisma";
 import { SponsorOrderStatus } from "@/generated/prisma";
 
 export type LearnerAvailabilityResult =
-  | { available: true; learner: { id: string; name: string; standard: string; imageUrl: string | null } }
-  | { available: false; reason: "not_found" | "already_sponsored" | "pending_order"; message: string };
+  | {
+      available: true;
+      learner: { id: string; name: string; standard: string; imageUrl: string | null };
+    }
+  | {
+      available: false;
+      reason: "not_found" | "already_sponsored" | "pending_order";
+      message: string;
+    };
 
 export const checkLearnerAvailableForSponsorship = async (
   prisma: PrismaClient,
