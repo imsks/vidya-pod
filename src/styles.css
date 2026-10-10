@@ -91,7 +91,12 @@
   --ring: oklch(0.68 0.19 45);
   --tribute: oklch(0.55 0.14 30);
   --sponsor: oklch(0.65 0.2 150);
-  --gradient-hero: linear-gradient(135deg, oklch(0.68 0.19 45) 0%, oklch(0.78 0.17 65) 50%, oklch(0.72 0.15 165) 100%);
+  --gradient-hero: linear-gradient(
+    135deg,
+    oklch(0.68 0.19 45) 0%,
+    oklch(0.78 0.17 65) 50%,
+    oklch(0.72 0.15 165) 100%
+  );
   --gradient-warm: linear-gradient(135deg, oklch(0.985 0.012 85) 0%, oklch(0.94 0.04 70) 100%);
   --gradient-dusk: linear-gradient(135deg, oklch(0.35 0.12 275) 0%, oklch(0.45 0.15 300) 100%);
   --shadow-glow: 0 20px 60px -20px color-mix(in oklab, oklch(0.68 0.19 45) 45%, transparent);
@@ -163,19 +168,34 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
 }
 
 @layer utilities {
-  .bg-gradient-hero { background-image: var(--gradient-hero); }
-  .bg-gradient-warm { background-image: var(--gradient-warm); }
-  .bg-gradient-dusk { background-image: var(--gradient-dusk); }
-  .shadow-glow { box-shadow: var(--shadow-glow); }
-  .shadow-soft { box-shadow: var(--shadow-soft); }
-  .shadow-lift { box-shadow: var(--shadow-lift); }
+  .bg-gradient-hero {
+    background-image: var(--gradient-hero);
+  }
+  .bg-gradient-warm {
+    background-image: var(--gradient-warm);
+  }
+  .bg-gradient-dusk {
+    background-image: var(--gradient-dusk);
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-lift {
+    box-shadow: var(--shadow-lift);
+  }
   .text-gradient {
     background: var(--gradient-hero);
     -webkit-background-clip: text;
@@ -186,32 +206,70 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
 }
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent); }
-  50% { box-shadow: 0 0 0 18px color-mix(in oklab, var(--primary) 0%, transparent); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 18px color-mix(in oklab, var(--primary) 0%, transparent);
+  }
 }
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 @keyframes draw-line {
-  from { stroke-dashoffset: 1000; }
-  to { stroke-dashoffset: 0; }
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
-.animate-float { animation: float 6s ease-in-out infinite; }
-.animate-fade-up { animation: fade-up 0.7s ease-out both; }
-.animate-pulse-glow { animation: pulse-glow 2.4s ease-in-out infinite; }
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+.animate-fade-up {
+  animation: fade-up 0.7s ease-out both;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2.4s ease-in-out infinite;
+}
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 20%, transparent), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--primary) 20%, transparent),
+    transparent
+  );
   background-size: 200% 100%;
   animation: shimmer 2.5s linear infinite;
 }
-.animate-draw { stroke-dasharray: 1000; animation: draw-line 2s ease-out forwards; }
+.animate-draw {
+  stroke-dasharray: 1000;
+  animation: draw-line 2s ease-out forwards;
+}

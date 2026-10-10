@@ -1,58 +1,110 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import type { Proctor, Teacher } from "@/generated/prisma";
+import { getAdminSecretFromRequest, validateAdminSecret } from "@/lib/admin-auth";
+import { getPrisma } from "@/lib/prisma";
+import { isPhotoUploadError, isPhotoValidationError, uploadEntityPhoto } from "@/lib/storage";
+import type { StorageEntityType } from "@/lib/storage/constants";
+import { parseRegisterBody } from "@/lib/validation/register";
+
+const roleToStorageEntity: Record<"teacher" | "proctor", StorageEntityType> = {
+  teacher: "teacher",
+  proctor: "proctor",
+};
+
+const mapTeacher = (teacher: Teacher) => ({
+  id: teacher.id,
+  name: teacher.name,
+  phone: teacher.phone,
+  qualification: teacher.qualification,
+  image_url: teacher.imageUrl,
+  created_at: teacher.createdAt.toISOString(),
+});
+
+const mapProctor = (proctor: Proctor) => ({
+  id: proctor.id,
+  name: proctor.name,
+  phone: proctor.phone,
+  qualification: proctor.qualification,
+  image_url: proctor.imageUrl,
+  created_at: proctor.createdAt.toISOString(),
+});
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabase();
-    
+    const adminSecret = getAdminSecretFromRequest(request);
+    if (!validateAdminSecret(adminSecret)) {
+      return NextResponse.json({ error: "Unauthorized: Invalid admin PIN" }, { status: 401 });
+    }
+
     const body = await request.json();
-    const { role, name, phone, qualification, standard, image_url } = body;
+    const { photo_data, photo_filename, ...registerData } = body;
+    const parsed = parseRegisterBody(registerData);
 
-    if (!role || !name || !phone) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: parsed.status });
     }
 
-    if (!["teacher", "student", "proctor"].includes(role)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
-    }
+    const { role, name, phone, image_url, qualification } = parsed.data;
+    let finalImageUrl: string | null = image_url || null;
+    let photoUploadWarning: string | undefined;
 
-    let result;
+    if (photo_data && photo_filename) {
+      try {
+        finalImageUrl = await uploadEntityPhoto({
+          entityType: roleToStorageEntity[role],
+          base64Data: photo_data,
+          filename: photo_filename,
+        });
+      } catch (error) {
+        if (isPhotoUploadError(error) && isPhotoValidationError(error)) {
+          return NextResponse.json({ error: error.message }, { status: 400 });
+        }
 
-    if (role === "student") {
-      if (!standard) {
-        return NextResponse.json(
-          { error: "Standard is required for students" },
-          { status: 400 },
-        );
+        if (isPhotoUploadError(error)) {
+          photoUploadWarning = error.message;
+        } else {
+          photoUploadWarning = "Photo upload failed. Record was created without an image.";
+        }
       }
-      result = await supabase.from("students").insert({ name, phone, standard, image_url });
-    } else {
-      if (!qualification) {
-        return NextResponse.json(
-          { error: "Qualification is required" },
-          { status: 400 },
-        );
-      }
-      const table = role === "teacher" ? "teachers" : "proctors";
-      result = await supabase.from(table).insert({ name, phone, qualification, image_url });
     }
 
-    if (result.error) {
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: 500 },
-      );
+    const prisma = getPrisma();
+    const entity =
+      role === "teacher"
+        ? await prisma.teacher.create({
+            data: {
+              name,
+              phone,
+              qualification,
+              imageUrl: finalImageUrl,
+            },
+          })
+        : await prisma.proctor.create({
+            data: {
+              name,
+              phone,
+              qualification,
+              imageUrl: finalImageUrl,
+            },
+          });
+
+    const response: {
+      success: boolean;
+      entity: ReturnType<typeof mapTeacher | typeof mapProctor>;
+      warning?: string;
+    } = {
+      success: true,
+      entity: role === "teacher" ? mapTeacher(entity as Teacher) : mapProctor(entity as Proctor),
+    };
+
+    if (photoUploadWarning) {
+      response.warning = photoUploadWarning;
     }
 
-    return NextResponse.json({ success: true });
-  } catch(e) {
-    console.error("Error in register route:", e);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error("Error in register route:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

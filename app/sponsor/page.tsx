@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { SponsorPage } from "@/components/sponsor-page";
+import { SponsorSelectPage } from "@/components/sponsor/sponsor-select-page";
 
 export const metadata: Metadata = {
   title: "Sponsor a Pod - Vidya Pods",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <Suspense>
-      <SponsorPage />
+      <SponsorSelectPage />
     </Suspense>
   );
 }

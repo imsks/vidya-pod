@@ -2,32 +2,66 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { clearAdminSessionPin, setAdminSessionPin } from "@/lib/admin-session";
+import type {
+  AdminDashboardData,
+  LearnerRecord,
+  ProctorRecord,
+  SponsorOrderRecord,
+  TeacherRecord,
+} from "@/types/admin";
 
-const ADMIN_ID = "sachin";
-const ADMIN_PASSWORD = "sachin";
+type Tab = "teachers" | "learners" | "proctors" | "sponsors";
 
-type Tab = "teachers" | "students" | "proctors" | "sponsors";
+const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateString("en-IN") : "—");
 
 export function AdminPage() {
   const [loggedIn, setLoggedIn] = useState(false);
-  const [loginId, setLoginId] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [adminPin, setAdminPin] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [sessionPin, setSessionPin] = useState("");
 
   const [activeTab, setActiveTab] = useState<Tab>("teachers");
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
-  const [proctors, setProctors] = useState<any[]>([]);
-  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
+  const [learners, setLearners] = useState<LearnerRecord[]>([]);
+  const [proctors, setProctors] = useState<ProctorRecord[]>([]);
+  const [sponsors, setSponsors] = useState<SponsorOrderRecord[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginId === ADMIN_ID && loginPassword === ADMIN_PASSWORD) {
+    const trimmedPin = adminPin.trim();
+
+    if (!trimmedPin) {
+      setLoginError("Please enter the admin PIN");
+      return;
+    }
+
+    setLoginLoading(true);
+    setLoginError("");
+
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ admin_secret: trimmedPin }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setLoginError(data.error || "Invalid admin PIN");
+        return;
+      }
+
+      setSessionPin(trimmedPin);
+      setAdminSessionPin(trimmedPin);
       setLoggedIn(true);
-      setLoginError("");
-    } else {
-      setLoginError("Invalid credentials");
+      setAdminPin("");
+    } catch {
+      setLoginError("Unable to sign in. Please try again.");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -36,11 +70,13 @@ export function AdminPage() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/admin");
+        const res = await fetch("/api/admin", {
+          headers: { "x-admin-secret": sessionPin },
+        });
         if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
+        const data = (await res.json()) as AdminDashboardData;
         setTeachers(data.teachers ?? []);
-        setStudents(data.students ?? []);
+        setLearners(data.learners ?? []);
         setProctors(data.proctors ?? []);
         setSponsors(data.sponsors ?? []);
       } catch (err) {
@@ -50,7 +86,7 @@ export function AdminPage() {
       }
     };
     loadData();
-  }, [loggedIn]);
+  }, [loggedIn, sessionPin]);
 
   if (!loggedIn) {
     return (
@@ -63,34 +99,18 @@ export function AdminPage() {
             <div className="w-14 h-14 mx-auto rounded-xl bg-gradient-hero flex items-center justify-center text-2xl shadow-glow">
               🔐
             </div>
-            <h1 className="mt-4 text-2xl font-black font-display">
-              Admin Login
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Vidya Pods Admin Panel
-            </p>
+            <h1 className="mt-4 text-2xl font-black font-display">Admin Login</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Vidya Pods Admin Panel</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">User ID</label>
-            <input
-              type="text"
-              required
-              value={loginId}
-              onChange={(e) => setLoginId(e.target.value)}
-              placeholder="Enter your ID"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Password</label>
+            <label className="block text-sm font-medium mb-2">Admin PIN</label>
             <input
               type="password"
               required
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              placeholder="Enter your password"
+              value={adminPin}
+              onChange={(e) => setAdminPin(e.target.value)}
+              placeholder="Enter admin PIN"
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
             />
           </div>
@@ -103,9 +123,10 @@ export function AdminPage() {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-gradient-hero text-primary-foreground px-6 py-3 font-bold shadow-glow hover:shadow-lift transition-all"
+            disabled={loginLoading}
+            className="w-full rounded-xl bg-gradient-hero text-primary-foreground px-6 py-3 font-bold shadow-glow hover:shadow-lift transition-all disabled:opacity-60"
           >
-            Login →
+            {loginLoading ? "Signing in..." : "Login →"}
           </button>
         </form>
       </div>
@@ -114,7 +135,7 @@ export function AdminPage() {
 
   const tabs: { key: Tab; label: string; count: number; icon: string }[] = [
     { key: "teachers", label: "Teachers", count: teachers.length, icon: "🧑‍🏫" },
-    { key: "students", label: "Students", count: students.length, icon: "🧒" },
+    { key: "learners", label: "Learners", count: learners.length, icon: "🧒" },
     { key: "proctors", label: "Proctors", count: proctors.length, icon: "🛡️" },
     {
       key: "sponsors",
@@ -124,25 +145,57 @@ export function AdminPage() {
     },
   ];
 
+  const addHref =
+    activeTab === "teachers"
+      ? "/admin/teacher"
+      : activeTab === "learners"
+        ? "/admin/learner"
+        : activeTab === "proctors"
+          ? "/admin/proctor"
+          : "/admin/learner";
+
+  const addLabel =
+    activeTab === "teachers"
+      ? "Teacher"
+      : activeTab === "learners"
+        ? "Learner"
+        : activeTab === "proctors"
+          ? "Proctor"
+          : "Learner";
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/70 border-b border-border/60">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="inline-block w-8 h-8 rounded-xl bg-gradient-hero shadow-glow" />
-            <span className="font-display font-bold text-xl">
-              Vidya Pods Admin
-            </span>
+            <span className="font-display font-bold text-xl">Vidya Pods Admin</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2 text-sm font-semibold hover:shadow-lift transition-all"
+              href="/admin/teacher"
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
             >
-              + Register User
+              + Teacher
+            </Link>
+            <Link
+              href="/admin/learner"
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
+            >
+              + Learner
+            </Link>
+            <Link
+              href="/admin/proctor"
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-semibold hover:border-primary/40 transition-all"
+            >
+              + Proctor
             </Link>
             <button
-              onClick={() => setLoggedIn(false)}
+              onClick={() => {
+                setLoggedIn(false);
+                setSessionPin("");
+                clearAdminSessionPin();
+              }}
               className="text-sm text-muted-foreground hover:text-foreground transition"
             >
               Logout
@@ -154,14 +207,9 @@ export function AdminPage() {
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           {tabs.map((t) => (
-            <div
-              key={t.key}
-              className="p-5 rounded-2xl bg-card border border-border shadow-soft"
-            >
+            <div key={t.key} className="p-5 rounded-2xl bg-card border border-border shadow-soft">
               <div className="text-2xl">{t.icon}</div>
-              <div className="mt-2 text-3xl font-black font-display">
-                {t.count}
-              </div>
+              <div className="mt-2 text-3xl font-black font-display">{t.count}</div>
               <div className="text-sm text-muted-foreground">{t.label}</div>
             </div>
           ))}
@@ -183,10 +231,19 @@ export function AdminPage() {
           ))}
         </div>
 
-        {loading ? (
-          <div className="text-center py-20 text-muted-foreground">
-            Loading...
+        {activeTab !== "sponsors" && (
+          <div className="mb-6">
+            <Link
+              href={addHref}
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:shadow-lift transition-all"
+            >
+              + Add {addLabel}
+            </Link>
           </div>
+        )}
+
+        {loading ? (
+          <div className="text-center py-20 text-muted-foreground">Loading...</div>
         ) : (
           <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
             {activeTab === "teachers" && (
@@ -196,25 +253,26 @@ export function AdminPage() {
                   t.image_url || "",
                   t.name,
                   t.phone,
-                  t.qualification,
-                  new Date(t.created_at).toLocaleDateString("en-IN"),
+                  t.qualification ?? "—",
+                  formatDate(t.created_at),
                 ])}
                 imageColumn={0}
                 emptyMsg="No teachers registered yet"
               />
             )}
-            {activeTab === "students" && (
+            {activeTab === "learners" && (
               <DataTable
-                columns={["Image", "Name", "Phone", "Standard", "Registered"]}
-                rows={students.map((s) => [
-                  s.image_url || "",
-                  s.name,
-                  s.phone,
-                  `Class ${s.standard}`,
-                  new Date(s.created_at).toLocaleDateString("en-IN"),
+                columns={["Image", "Name", "Phone", "Class", "Sponsored", "Registered"]}
+                rows={learners.map((l) => [
+                  l.image_url || "",
+                  l.name,
+                  l.phone,
+                  `Class ${l.standard ?? "—"}`,
+                  l.sponsor_id ? "Yes" : "No",
+                  formatDate(l.created_at),
                 ])}
                 imageColumn={0}
-                emptyMsg="No students registered yet"
+                emptyMsg="No learners registered yet"
               />
             )}
             {activeTab === "proctors" && (
@@ -224,8 +282,8 @@ export function AdminPage() {
                   p.image_url || "",
                   p.name,
                   p.phone,
-                  p.qualification,
-                  new Date(p.created_at).toLocaleDateString("en-IN"),
+                  p.qualification ?? "—",
+                  formatDate(p.created_at),
                 ])}
                 imageColumn={0}
                 emptyMsg="No proctors registered yet"
@@ -233,23 +291,15 @@ export function AdminPage() {
             )}
             {activeTab === "sponsors" && (
               <DataTable
-                columns={[
-                  "Name",
-                  "Email",
-                  "Phone",
-                  "Plan",
-                  "Amount",
-                  "Status",
-                  "Date",
-                ]}
+                columns={["Name", "Email", "Learner", "Plan", "Amount", "Status", "Date"]}
                 rows={sponsors.map((s) => [
                   s.name,
                   s.email,
-                  s.phone,
+                  s.learner_name ?? "—",
                   s.plan,
                   `₹${s.amount}`,
                   s.status,
-                  new Date(s.created_at).toLocaleDateString("en-IN"),
+                  formatDate(s.created_at),
                 ])}
                 emptyMsg="No sponsor orders yet"
               />
@@ -273,9 +323,7 @@ function DataTable({
   imageColumn?: number;
 }) {
   if (rows.length === 0) {
-    return (
-      <div className="text-center py-16 text-muted-foreground">{emptyMsg}</div>
-    );
+    return <div className="text-center py-16 text-muted-foreground">{emptyMsg}</div>;
   }
 
   return (
@@ -295,19 +343,12 @@ function DataTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr
-              key={i}
-              className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-            >
+            <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
               {row.map((cell, j) => (
                 <td key={j} className="px-5 py-4">
                   {imageColumn === j ? (
                     cell ? (
-                      <img
-                        src={cell}
-                        alt=""
-                        className="w-9 h-9 rounded-full object-cover"
-                      />
+                      <img src={cell} alt="" className="w-9 h-9 rounded-full object-cover" />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
                         -
