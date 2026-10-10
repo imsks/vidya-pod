@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ShareSponsorship } from "./share-sponsorship";
 import { SponsorHeader } from "./sponsor-header";
 import type { SponsorOrderStatusResponse } from "./types";
 
@@ -140,6 +141,12 @@ export const SponsorThankYouPage = () => {
                   We&apos;re going to initiate the program for{" "}
                   <strong className="text-foreground">{orderStatus.learner.name}</strong>.
                 </p>
+                {orderStatus.share_url && (
+                  <ShareSponsorship
+                    shareUrl={orderStatus.share_url}
+                    learnerName={orderStatus.learner.name}
+                  />
+                )}
                 <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4 text-left">
                   <p className="text-xs font-semibold uppercase tracking-widest text-primary">
                     Coming soon

@@ -93,6 +93,7 @@ model SponsorOrder {
   amount           Int
   status           SponsorOrderStatus @default(PENDING)
   paymentSessionId String?            @map("payment_session_id")
+  shareSlug        String?            @unique @map("share_slug")
   sponsorId        String?            @map("sponsor_id") @db.Uuid
   learnerId        String?            @map("learner_id") @db.Uuid
   createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz

@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS sponsor_orders (
   amount INTEGER NOT NULL,
   status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED')),
   payment_session_id TEXT,
+  share_slug TEXT UNIQUE,
   sponsor_id UUID REFERENCES sponsors(id),
   learner_id UUID REFERENCES learners(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -114,3 +115,7 @@ CREATE INDEX IF NOT EXISTS idx_sponsor_orders_status ON sponsor_orders(status);
 ALTER TABLE teachers ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE proctors ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE sponsor_orders ADD COLUMN IF NOT EXISTS image_url TEXT;
+
+-- Add public share slug column for shareable sponsorship URLs
+ALTER TABLE sponsor_orders ADD COLUMN IF NOT EXISTS share_slug TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS sponsor_orders_share_slug_key ON sponsor_orders(share_slug);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { syncSponsorOrderFromCashfree } from "@/lib/cashfree/sync-sponsor-order";
 import { getPrisma } from "@/lib/prisma";
+import { buildSponsorshipShareUrl } from "@/lib/sponsorship/share-url";
 
 type RouteContext = {
   params: Promise<{ orderId: string }>;
@@ -11,6 +12,7 @@ const orderSelect = {
   status: true,
   plan: true,
   amount: true,
+  shareSlug: true,
   learner: {
     select: {
       name: true,
@@ -49,6 +51,7 @@ export async function GET(_request: Request, context: RouteContext) {
         status: order.status,
         plan: order.plan,
         amount: order.amount,
+        share_url: order.status === "SUCCESS" ? buildSponsorshipShareUrl(order.shareSlug) : null,
         learner: order.learner
           ? {
               name: order.learner.name,
