@@ -130,11 +130,26 @@ export const SponsorThankYouPage = () => {
             )}
 
             {isSuccess && orderStatus.learner && (
-              <p className="mt-4 text-lg">
-                You are now sponsoring{" "}
-                <strong className="text-primary">{orderStatus.learner.name}</strong> (Grade{" "}
-                {orderStatus.learner.standard}).
-              </p>
+              <>
+                <p className="mt-4 text-lg">
+                  You are now sponsoring{" "}
+                  <strong className="text-primary">{orderStatus.learner.name}</strong> (Grade{" "}
+                  {orderStatus.learner.standard}).
+                </p>
+                <p className="mt-3 text-base">
+                  We&apos;re going to initiate the program for{" "}
+                  <strong className="text-foreground">{orderStatus.learner.name}</strong>.
+                </p>
+                <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4 text-left">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                    Coming soon
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    We don&apos;t have a dashboard for you yet, but we&apos;re bringing it soon so
+                    you can track the progress of all your students.
+                  </p>
+                </div>
+              </>
             )}
 
             {isFailed && (
@@ -160,6 +175,23 @@ export const SponsorThankYouPage = () => {
           >
             ← Back Home
           </Link>
+        </div>
+
+        <div className="mt-12 pt-6 border-t border-border/60">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Powered by
+          </p>
+          <a
+            href="https://theboringeducation.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-2 font-bold hover:text-primary transition-colors"
+          >
+            The Boring Education ↗
+          </a>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Learn tech the boring way - DSA, web development, and interview prep, all in one place.
+          </p>
         </div>
       </main>
     </div>

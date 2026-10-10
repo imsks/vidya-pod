@@ -368,14 +368,14 @@ type Person = { name: string; role: string; detail: string; emoji: string };
 const PEOPLE: Record<string, Person[]> = {
   Students: [
     {
-      name: "Aarav, 5",
-      role: "Grade 1",
-      detail: "Loves math puzzles and cricket.",
+      name: "Aryan, 5",
+      role: "LKG",
+      detail: "Loves cricket.",
       emoji: "🧒",
     },
     {
-      name: "Ishita, 8",
-      role: "Class 3",
+      name: "Gauri, 9",
+      role: "Class 5",
       detail: "Dreams of becoming a doctor.",
       emoji: "👧",
     },
