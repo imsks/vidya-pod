@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS sponsors (
 CREATE TABLE IF NOT EXISTS learners (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
-  phone TEXT NOT NULL,
+  phone TEXT,
   standard TEXT NOT NULL,
   image_url TEXT,
   sponsor_id UUID REFERENCES sponsors(id),

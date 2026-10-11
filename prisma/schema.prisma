@@ -33,7 +33,7 @@ model Sponsor {
 model Learner {
   id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String
-  phone     String
+  phone     String?
   standard  String
   imageUrl  String?        @map("image_url")
   sponsorId String?        @map("sponsor_id") @db.Uuid

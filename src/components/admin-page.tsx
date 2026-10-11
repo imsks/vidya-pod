@@ -266,7 +266,7 @@ export function AdminPage() {
                 rows={learners.map((l) => [
                   l.image_url || "",
                   l.name,
-                  l.phone,
+                  l.phone || "—",
                   `Class ${l.standard ?? "—"}`,
                   l.sponsor_id ? "Yes" : "No",
                   formatDate(l.created_at),

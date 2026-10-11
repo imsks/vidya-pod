@@ -10,7 +10,7 @@ export interface TeacherRecord {
 export interface LearnerRecord {
   id?: string;
   name: string;
-  phone: string;
+  phone?: string | null;
   standard?: string;
   image_url?: string | null;
   sponsor_id?: string | null;

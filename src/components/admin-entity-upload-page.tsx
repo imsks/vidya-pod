@@ -53,6 +53,7 @@ interface FormState {
   standard: string;
   qualification: string;
   sponsorId: string;
+  imageUrl: string;
 }
 
 const emptyFormState = (): FormState => ({
@@ -61,6 +62,7 @@ const emptyFormState = (): FormState => ({
   standard: "",
   qualification: "",
   sponsorId: "",
+  imageUrl: "",
 });
 
 interface AdminEntityUploadPageProps {
@@ -166,8 +168,9 @@ export function AdminEntityUploadPage({ entityType }: AdminEntityUploadPageProps
     setError("");
 
     try {
+      const trimmedImageUrl = formData.imageUrl.trim();
       const photoFields =
-        imageFile && imagePreview
+        !trimmedImageUrl && imageFile && imagePreview
           ? { photo_data: imagePreview, photo_filename: imageFile.name }
           : {};
 
@@ -178,10 +181,14 @@ export function AdminEntityUploadPage({ entityType }: AdminEntityUploadPageProps
         const body: Record<string, unknown> = {
           admin_secret: sessionPin,
           name: formData.name,
-          phone: formData.phone,
+          phone: formData.phone.trim(),
           standard: formData.standard,
           ...photoFields,
         };
+
+        if (trimmedImageUrl) {
+          body.image_url = trimmedImageUrl;
+        }
 
         if (formData.sponsorId.trim()) {
           body.sponsor_id = formData.sponsorId.trim();
@@ -201,6 +208,10 @@ export function AdminEntityUploadPage({ entityType }: AdminEntityUploadPageProps
           qualification: formData.qualification,
           ...photoFields,
         };
+
+        if (trimmedImageUrl) {
+          body.image_url = trimmedImageUrl;
+        }
 
         res = await fetch("/api/register", {
           method: "POST",
@@ -248,6 +259,10 @@ export function AdminEntityUploadPage({ entityType }: AdminEntityUploadPageProps
     setImagePreview(null);
     setError("");
   };
+
+  const photoUrl = /^https?:\/\/\S+$/i.test(formData.imageUrl.trim())
+    ? formData.imageUrl.trim()
+    : "";
 
   if (!authenticated) {
     return (
@@ -381,11 +396,16 @@ export function AdminEntityUploadPage({ entityType }: AdminEntityUploadPageProps
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              Phone Number <span className="text-destructive">*</span>
+              Phone Number{" "}
+              {entityType === "learner" ? (
+                <span className="text-muted-foreground font-normal">(optional)</span>
+              ) : (
+                <span className="text-destructive">*</span>
+              )}
             </label>
             <input
               type="tel"
-              required
+              required={entityType !== "learner"}
               value={formData.phone}
               onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
               placeholder="10-digit phone number"
@@ -453,45 +473,76 @@ export function AdminEntityUploadPage({ entityType }: AdminEntityUploadPageProps
               Profile Photo <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
             <div className="space-y-3">
-              {imagePreview ? (
+              <input
+                type="url"
+                value={formData.imageUrl}
+                onChange={(e) => {
+                  setFormData((prev) => ({ ...prev, imageUrl: e.target.value }));
+                  if (e.target.value.trim()) {
+                    handleRemoveImage();
+                  }
+                }}
+                placeholder="Paste an image URL (https://...)"
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+              />
+
+              {photoUrl ? (
                 <div className="flex items-center gap-4">
                   <img
-                    src={imagePreview}
+                    src={photoUrl}
                     alt="Preview"
                     className="w-20 h-20 rounded-xl object-cover border border-border"
                   />
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground truncate">{imageFile?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {imageFile ? `${(imageFile.size / 1024).toFixed(1)} KB` : ""}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="mt-2 text-sm text-destructive hover:text-destructive/80 transition"
-                    >
-                      Remove
-                    </button>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Linked image will be saved as-is — nothing is uploaded.
+                  </p>
                 </div>
               ) : (
-                <label
-                  htmlFor={`photo-upload-${entityType}`}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      fileInputRef.current?.click();
-                    }
-                  }}
-                  className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-border bg-card hover:border-primary/40 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer transition"
-                >
-                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl">
-                    📷
-                  </div>
-                  <p className="mt-3 text-sm font-medium">Click to upload photo</p>
-                  <p className="mt-1 text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
-                </label>
+                <>
+                  <p className="text-xs text-muted-foreground text-center">
+                    or upload a file instead
+                  </p>
+                  {imagePreview ? (
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-20 h-20 rounded-xl object-cover border border-border"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm text-muted-foreground truncate">{imageFile?.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {imageFile ? `${(imageFile.size / 1024).toFixed(1)} KB` : ""}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="mt-2 text-sm text-destructive hover:text-destructive/80 transition"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor={`photo-upload-${entityType}`}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          fileInputRef.current?.click();
+                        }
+                      }}
+                      className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-border bg-card hover:border-primary/40 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer transition"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl">
+                        📷
+                      </div>
+                      <p className="mt-3 text-sm font-medium">Click to upload photo</p>
+                      <p className="mt-1 text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
+                    </label>
+                  )}
+                </>
               )}
               <input
                 ref={fileInputRef}

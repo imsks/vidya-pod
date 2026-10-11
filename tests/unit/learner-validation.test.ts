@@ -58,16 +58,29 @@ describe("parseLearnerBody", () => {
     }
   });
 
-  it("rejects missing phone", () => {
+  it("accepts a payload without phone", () => {
     const result = parseLearnerBody({
       name: "Asha",
       standard: "8",
     });
 
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.phone).toBeUndefined();
+    }
+  });
+
+  it("rejects an invalid image_url", () => {
+    const result = parseLearnerBody({
+      name: "Asha",
+      standard: "8",
+      image_url: "not-a-url",
+    });
+
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.status).toBe(400);
-      expect(result.error).toMatch(/required/i);
+      expect(result.error).toMatch(/valid url/i);
     }
   });
 

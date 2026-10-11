@@ -26,11 +26,11 @@ export async function POST(request: Request) {
 
     const { name, phone, standard, image_url, sponsor_id } = parsed.data;
 
-    // Handle photo upload if provided
-    let finalImageUrl: string | null = image_url || null;
+    // An image_url is stored as-is; only uploaded files go through storage.
+    let finalImageUrl: string | null = image_url?.trim() || null;
     let photoUploadWarning: string | undefined;
 
-    if (photo_data && photo_filename) {
+    if (!finalImageUrl && photo_data && photo_filename) {
       try {
         finalImageUrl = await uploadEntityPhoto({
           entityType: "learner",
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     const learner = await prisma.learner.create({
       data: {
         name,
-        phone,
+        phone: phone?.trim() || null,
         standard,
         imageUrl: finalImageUrl,
         sponsorId: sponsor_id || null,
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       learner: {
         id: string;
         name: string;
-        phone: string;
+        phone: string | null;
         standard: string;
         image_url: string | null;
         sponsor_id: string | null;
