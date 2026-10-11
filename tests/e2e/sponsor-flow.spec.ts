@@ -17,7 +17,7 @@ test.describe("Sponsor Flow", () => {
   });
 
   test("checkout page shows fund a pod heading when learner exists", async ({ page }) => {
-    await page.route("**/api/learner/ready-to-sponsor*", async (route) => {
+    await page.route("**/api/learner?*", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -29,9 +29,11 @@ test.describe("Sponsor Flow", () => {
               name: "Asha Kumar",
               standard: "8",
               image_url: null,
+              is_sponsored: false,
               created_at: "2024-01-01T00:00:00.000Z",
             },
           ],
+          counts: { all: 1, sponsored: 0, available: 1 },
           pagination: {
             page: 1,
             limit: 12,
