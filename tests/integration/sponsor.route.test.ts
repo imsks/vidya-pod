@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PRICING } from "@/constants/pricing";
 
 const LEARNER_ID = "550e8400-e29b-41d4-a716-446655440010";
+const MONTHLY_AMOUNT = PRICING.monthly.total;
+const YEARLY_AMOUNT = PRICING.yearly.total;
 
 const sponsorOrderCreateMock = vi.fn();
 const learnerFindUniqueMock = vi.fn();
@@ -23,7 +26,7 @@ const validPayload = {
   email: "donor@example.com",
   phone: "9999999999",
   plan: "monthly" as const,
-  amount: 400,
+  amount: MONTHLY_AMOUNT,
   learner_id: LEARNER_ID,
 };
 
@@ -148,7 +151,7 @@ describe("POST /api/sponsor", () => {
       data: expect.objectContaining({
         name: "Donor",
         plan: "monthly",
-        amount: 400,
+        amount: MONTHLY_AMOUNT,
         status: "PENDING",
         paymentSessionId: "session_123",
         learnerId: LEARNER_ID,
@@ -169,7 +172,7 @@ describe("POST /api/sponsor", () => {
     const response = await POST(
       new Request("http://localhost/api/sponsor", {
         method: "POST",
-        body: JSON.stringify({ ...validPayload, plan: "yearly", amount: 4800 }),
+        body: JSON.stringify({ ...validPayload, plan: "yearly", amount: YEARLY_AMOUNT }),
       }),
     );
 

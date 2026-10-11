@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { PRICING } from "@/constants/pricing";
 import { createSponsorOrderId, parseSponsorBody } from "@/lib/validation/sponsor";
 
 const LEARNER_ID = "550e8400-e29b-41d4-a716-446655440010";
+const MONTHLY_AMOUNT = PRICING.monthly.total;
 
 describe("parseSponsorBody", () => {
   it("accepts a valid monthly sponsor payload", () => {
@@ -10,7 +12,7 @@ describe("parseSponsorBody", () => {
       email: "donor@example.com",
       phone: "9999999999",
       plan: "monthly",
-      amount: 400,
+      amount: MONTHLY_AMOUNT,
       learner_id: LEARNER_ID,
     });
 
@@ -23,7 +25,7 @@ describe("parseSponsorBody", () => {
       email: "not-an-email",
       phone: "9999999999",
       plan: "monthly",
-      amount: 400,
+      amount: MONTHLY_AMOUNT,
       learner_id: LEARNER_ID,
     });
 
@@ -39,7 +41,7 @@ describe("parseSponsorBody", () => {
       email: "donor@example.com",
       phone: "9999999999",
       plan: "monthly",
-      amount: 400,
+      amount: MONTHLY_AMOUNT,
     });
 
     expect(result.success).toBe(false);
@@ -51,7 +53,7 @@ describe("parseSponsorBody", () => {
       email: "donor@example.com",
       phone: "9999999999",
       plan: "monthly",
-      amount: 400,
+      amount: MONTHLY_AMOUNT,
       learner_id: "not-a-uuid",
     });
 
@@ -70,7 +72,7 @@ describe("parseSponsorBody", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error).toMatch(/4800/);
+      expect(result.error).toMatch(new RegExp(String(PRICING.yearly.total)));
     }
   });
 
@@ -80,7 +82,7 @@ describe("parseSponsorBody", () => {
       email: "donor@example.com",
       phone: "9999999999",
       plan: "lifetime",
-      amount: 400,
+      amount: MONTHLY_AMOUNT,
       learner_id: LEARNER_ID,
     });
 

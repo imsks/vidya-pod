@@ -7,10 +7,11 @@ import { useCashfreeSDK } from "./use-cashfree-sdk";
 
 interface SponsorPaymentFormProps {
   learnerId: string;
+  learnerName?: string;
   plan: PlanType;
 }
 
-export const SponsorPaymentForm = ({ learnerId, plan }: SponsorPaymentFormProps) => {
+export const SponsorPaymentForm = ({ learnerId, learnerName, plan }: SponsorPaymentFormProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -57,7 +58,14 @@ export const SponsorPaymentForm = ({ learnerId, plan }: SponsorPaymentFormProps)
       onSubmit={handlePay}
       className="p-8 rounded-3xl bg-card border border-border shadow-soft space-y-5"
     >
-      <h2 className="text-xl font-bold">Your Details</h2>
+      <div>
+        <h2 className="text-xl font-bold">Your Details</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          We use these details to link your sponsorship to{" "}
+          <strong className="font-semibold text-foreground">{learnerName ?? "this child"}</strong>{" "}
+          and to send you receipts and progress updates. We never share them publicly.
+        </p>
+      </div>
 
       <div>
         <label className="block text-sm font-medium mb-2">Full Name</label>

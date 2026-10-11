@@ -1,3 +1,35 @@
+/** The only figure we expect to change — a sponsor's share of the teacher's salary. */
+export const TEACHER_SALARY_PER_MONTH = 200;
+
+export const STATIONERY_PER_MONTH = 50;
+export const PROCTOR_PER_MONTH = 50;
+export const MONTHS_PER_YEAR = 12;
+
+export interface PricingLineItem {
+  label: string;
+  amount: number;
+}
+
+const MONTHLY_BREAKDOWN: PricingLineItem[] = [
+  { label: "Teacher Salary", amount: TEACHER_SALARY_PER_MONTH },
+  { label: "Stationery", amount: STATIONERY_PER_MONTH },
+  { label: "Proctor", amount: PROCTOR_PER_MONTH },
+];
+
+const sumBreakdown = (items: PricingLineItem[]) =>
+  items.reduce((total, item) => total + item.amount, 0);
+
+const YEARLY_BREAKDOWN: PricingLineItem[] = MONTHLY_BREAKDOWN.map((item) => ({
+  label: item.label,
+  amount: item.amount * MONTHS_PER_YEAR,
+}));
+
+export const MONTHLY_TOTAL = sumBreakdown(MONTHLY_BREAKDOWN);
+export const YEARLY_TOTAL = sumBreakdown(YEARLY_BREAKDOWN);
+
+/** What a yearly sponsor saves versus paying monthly for the same period. */
+export const YEARLY_SAVINGS = MONTHLY_TOTAL * MONTHS_PER_YEAR - YEARLY_TOTAL;
+
 export const PRICING = {
   monthly: {
     label: "Monthly",
@@ -5,18 +37,14 @@ export const PRICING = {
     suffix: "/mo",
     tagline: "Flexible. Cancel anytime. Perfect for starting small.",
     featured: false,
-    savings: null,
+    savings: 0,
     features: [
       "Fund one Student, every month",
       "Monthly impact reports",
       "Direct thank-you notes from Student",
     ],
-    breakdown: [
-      { label: "Teacher Salary", amount: 200 },
-      { label: "Stationery", amount: 50 },
-      { label: "Proctor", amount: 50 },
-    ],
-    total: 300,
+    breakdown: MONTHLY_BREAKDOWN,
+    total: MONTHLY_TOTAL,
   },
   yearly: {
     label: "Yearly",
@@ -24,18 +52,14 @@ export const PRICING = {
     suffix: "/yr",
     tagline: "Gift a full academic year.",
     featured: true,
-    savings: null,
+    savings: YEARLY_SAVINGS,
     features: [
       "Full year of learning for one Student",
       "Named sponsorship (optional)",
       "Year-end documentary + visit invite",
     ],
-    breakdown: [
-      { label: "Teacher Salary", amount: 2400 },
-      { label: "Stationery", amount: 600 },
-      { label: "Proctor", amount: 600 },
-    ],
-    total: 3600,
+    breakdown: YEARLY_BREAKDOWN,
+    total: YEARLY_TOTAL,
   },
 } as const;
 

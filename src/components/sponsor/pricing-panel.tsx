@@ -24,7 +24,11 @@ export const PricingPanel = ({ plan, onPlanChange }: PricingPanelProps) => {
               }`}
             >
               {p}
-              {p === "yearly" && <span className="ml-2 text-xs text-accent">Save ₹6,000</span>}
+              {PRICING[p].savings > 0 && (
+                <span className="ml-2 text-xs text-accent">
+                  Save ₹{PRICING[p].savings.toLocaleString("en-IN")}
+                </span>
+              )}
             </button>
           ))}
         </div>

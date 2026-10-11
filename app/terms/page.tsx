@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  MONTHS_PER_YEAR,
+  PRICING,
+  PROCTOR_PER_MONTH,
+  STATIONERY_PER_MONTH,
+  TEACHER_SALARY_PER_MONTH,
+} from "@/constants/pricing";
+
+const inr = (amount: number) => `₹${amount.toLocaleString("en-IN")}`;
 
 export const metadata: Metadata = {
   title: "Terms & Conditions - Vidya Pods",
@@ -40,17 +49,21 @@ export default function TermsPage() {
         <p>All prices are listed in Indian Rupees (INR). A sponsorship funds one student.</p>
         <ul>
           <li>
-            <strong>Monthly Sponsorship:</strong> ₹300/month - flexible, cancel anytime. Includes
-            monthly impact reports and direct thank-you notes from the student.
+            <strong>Monthly Sponsorship:</strong> {inr(PRICING.monthly.total)}/month - flexible,
+            cancel anytime. Includes monthly impact reports and direct thank-you notes from the
+            student.
           </li>
           <li>
-            <strong>Yearly Sponsorship:</strong> ₹3,600/year - a full academic year for one student.
-            Includes named sponsorship (optional) and a year-end documentary plus visit invite.
+            <strong>Yearly Sponsorship:</strong> {inr(PRICING.yearly.total)}/year - a full academic
+            year for one student. Includes named sponsorship (optional) and a year-end documentary
+            plus visit invite.
           </li>
         </ul>
         <p>
-          Each ₹300/month sponsorship is allocated as ₹200 teacher salary, ₹50 stationery, and ₹50
-          proctor fee.
+          Each {inr(PRICING.monthly.total)}/month sponsorship is allocated as{" "}
+          {inr(TEACHER_SALARY_PER_MONTH)} teacher salary, {inr(STATIONERY_PER_MONTH)} stationery,
+          and {inr(PROCTOR_PER_MONTH)} proctor fee. The yearly plan is the same allocation billed
+          for {MONTHS_PER_YEAR} months upfront.
         </p>
 
         <h2>4. Payment</h2>
