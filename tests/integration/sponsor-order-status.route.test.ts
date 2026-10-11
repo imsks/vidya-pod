@@ -114,6 +114,7 @@ describe("GET /api/sponsor/[orderId]", () => {
         status: "SUCCESS",
         plan: "monthly",
         amount: 400,
+        shareSlug: "abcdefghijklmnop",
         learner: {
           name: "Asha Kumar",
           standard: "8",

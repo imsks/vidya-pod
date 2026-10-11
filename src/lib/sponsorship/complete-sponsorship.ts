@@ -1,5 +1,6 @@
 import type { PrismaClient, SponsorOrder } from "@/generated/prisma";
 import { SponsorOrderStatus } from "@/generated/prisma";
+import { generateShareSlug } from "./share-url";
 
 export type CompleteSponsorshipResult =
   | { success: true; order: SponsorOrder; alreadyCompleted: boolean }
@@ -45,6 +46,7 @@ export const completeSponsorshipPayment = async (
       data: {
         status: SponsorOrderStatus.SUCCESS,
         sponsorId: sponsor.id,
+        shareSlug: order.shareSlug ?? generateShareSlug(),
       },
     });
 

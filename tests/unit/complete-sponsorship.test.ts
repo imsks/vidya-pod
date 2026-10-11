@@ -94,6 +94,14 @@ describe("completeSponsorshipPayment", () => {
       where: { id: "learner-1" },
       data: { sponsorId: "sponsor-1" },
     });
+    expect(sponsorOrderUpdate).toHaveBeenCalledWith({
+      where: { id: "order-1" },
+      data: {
+        status: SponsorOrderStatus.SUCCESS,
+        sponsorId: "sponsor-1",
+        shareSlug: expect.stringMatching(/^[A-Za-z0-9_-]{8,64}$/),
+      },
+    });
   });
 });
 

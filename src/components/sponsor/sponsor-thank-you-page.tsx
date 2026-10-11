@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SponsorHeader } from "./sponsor-header";
+import { SponsorshipShareCard } from "./sponsorship-share-card";
 import type { SponsorOrderStatusResponse } from "./types";
 
 const POLL_INTERVAL_MS = 3000;
@@ -98,100 +99,97 @@ export const SponsorThankYouPage = () => {
     <div className="min-h-screen bg-background">
       <SponsorHeader />
 
-      <main className="max-w-md mx-auto px-6 py-16 text-center">
-        <div
-          className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl ${
-            isFailed ? "bg-destructive/20" : "bg-accent/20"
-          }`}
-        >
-          {isFailed ? "😔" : isSuccess ? "🎉" : "⏳"}
-        </div>
+      <main className="mx-auto w-full max-w-5xl px-5 py-12 sm:px-6 sm:py-16">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start lg:gap-14">
+          <div className="text-center">
+            <div
+              className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full text-3xl ${
+                isFailed ? "bg-destructive/20" : "bg-accent/20"
+              }`}
+            >
+              {isFailed ? "😔" : isSuccess ? "🎉" : "⏳"}
+            </div>
 
-        <h1 className="mt-6 text-3xl font-black font-display">
-          {isFailed ? "Payment Failed" : isSuccess ? "Thank You!" : "Processing Payment"}
-        </h1>
+            <h1 className="mt-5 font-display text-3xl font-black sm:text-4xl">
+              {isFailed ? "Payment Failed" : isSuccess ? "Thank You!" : "Processing Payment"}
+            </h1>
 
-        {loading && !orderStatus && (
-          <p className="mt-3 text-muted-foreground">Checking your payment status...</p>
-        )}
-
-        {error && <p className="mt-3 text-destructive">{error}</p>}
-
-        {orderStatus && (
-          <>
-            <p className="mt-3 text-muted-foreground">
-              Order ID: <strong className="text-foreground">{orderStatus.order_id}</strong>
-            </p>
-
-            {isPending && (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Your payment is being verified. This page will update automatically.
-              </p>
+            {loading && !orderStatus && (
+              <p className="mt-3 text-muted-foreground">Checking your payment status...</p>
             )}
 
-            {isSuccess && orderStatus.learner && (
-              <>
-                <p className="mt-4 text-lg">
-                  You are now sponsoring{" "}
-                  <strong className="text-primary">{orderStatus.learner.name}</strong> (Grade{" "}
-                  {orderStatus.learner.standard}).
-                </p>
-                <p className="mt-3 text-base">
-                  We&apos;re going to initiate the program for{" "}
-                  <strong className="text-foreground">{orderStatus.learner.name}</strong>.
-                </p>
-                <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4 text-left">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                    Coming soon
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    We don&apos;t have a dashboard for you yet, but we&apos;re bringing it soon so
-                    you can track the progress of all your students.
-                  </p>
-                </div>
-              </>
+            {error && <p className="mt-3 text-destructive">{error}</p>}
+
+            {isPending && orderStatus && (
+              <p className="mt-3 text-muted-foreground">
+                Your payment is being verified. This page updates automatically.
+              </p>
             )}
 
             {isFailed && (
-              <p className="mt-4 text-muted-foreground">
+              <p className="mt-3 text-muted-foreground">
                 Your payment could not be completed. Please try again.
               </p>
             )}
-          </>
-        )}
 
-        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-          {isFailed && (
-            <Link
-              href="/sponsor"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero text-primary-foreground px-6 py-3 font-semibold shadow-glow hover:shadow-lift transition-all"
-            >
-              Try again →
-            </Link>
-          )}
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-6 py-3 font-semibold hover:bg-primary hover:text-primary-foreground transition-all"
-          >
-            ← Back Home
-          </Link>
-        </div>
+            {isSuccess && orderStatus?.learner && (
+              <>
+                <p className="mt-3 text-muted-foreground">
+                  You&apos;re now sponsoring the education of{" "}
+                  <strong className="font-semibold text-primary">{orderStatus.learner.name}</strong>
+                  , a Grade {orderStatus.learner.standard} student.
+                </p>
+                <SponsorshipShareCard
+                  learnerName={orderStatus.learner.name}
+                  learnerStandard={orderStatus.learner.standard}
+                  plan={orderStatus.plan}
+                  amount={orderStatus.amount}
+                />
+              </>
+            )}
 
-        <div className="mt-12 pt-6 border-t border-border/60">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Powered by
-          </p>
-          <a
-            href="https://theboringeducation.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 inline-flex items-center gap-2 font-bold hover:text-primary transition-colors"
-          >
-            The Boring Education ↗
-          </a>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Learn tech the boring way - DSA, web development, and interview prep, all in one place.
-          </p>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              {isFailed && (
+                <Link
+                  href="/sponsor"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-hero px-6 py-3 font-semibold text-primary-foreground shadow-glow transition-all hover:shadow-lift"
+                >
+                  Try again →
+                </Link>
+              )}
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-3 font-semibold text-background transition-all hover:bg-primary hover:text-primary-foreground"
+              >
+                ← Back Home
+              </Link>
+            </div>
+          </div>
+
+          <aside className="space-y-5 border-t border-border/60 pt-8 text-center text-sm text-muted-foreground lg:border-l lg:border-t-0 lg:pl-8 lg:pt-2 lg:text-left">
+            {isSuccess && <p>A dashboard to track your students is on the way.</p>}
+
+            {orderStatus && (
+              <p className="text-xs">
+                Order ID
+                <br />
+                <span className="font-mono break-all text-foreground">{orderStatus.order_id}</span>
+              </p>
+            )}
+
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest">Powered by</p>
+              <a
+                href="https://theboringeducation.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-block font-bold text-foreground transition-colors hover:text-primary"
+              >
+                The Boring Education ↗
+              </a>
+              <p className="mt-1 text-xs">Learn tech the boring way.</p>
+            </div>
+          </aside>
         </div>
       </main>
     </div>
