@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  buildShareCaption,
   buildShareMessage,
-  buildSocialShareLinks,
-  buildSponsorshipShareUrl,
+  buildSponsorInviteUrl,
   generateShareSlug,
   getAppBaseUrl,
+  getAppDomain,
   isValidShareSlug,
 } from "@/lib/sponsorship/share-url";
 
@@ -48,18 +49,17 @@ describe("getAppBaseUrl", () => {
   });
 });
 
-describe("buildSponsorshipShareUrl", () => {
-  it("builds a public url for a valid slug", () => {
+describe("getAppDomain", () => {
+  it("strips the protocol", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://vidyapods.com";
-    expect(buildSponsorshipShareUrl("abcdefghijklmnop")).toBe(
-      "https://vidyapods.com/sponsorship/abcdefghijklmnop",
-    );
+    expect(getAppDomain()).toBe("vidyapods.com");
   });
+});
 
-  it("returns null for missing or invalid slugs", () => {
-    expect(buildSponsorshipShareUrl(null)).toBeNull();
-    expect(buildSponsorshipShareUrl(undefined)).toBeNull();
-    expect(buildSponsorshipShareUrl("bad slug")).toBeNull();
+describe("buildSponsorInviteUrl", () => {
+  it("points at the sponsor page", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://vidyapods.com";
+    expect(buildSponsorInviteUrl()).toBe("https://vidyapods.com/sponsor");
   });
 });
 
@@ -70,14 +70,12 @@ describe("buildShareMessage", () => {
   });
 });
 
-describe("buildSocialShareLinks", () => {
-  it("encodes the share url and message", () => {
-    const links = buildSocialShareLinks("https://vidyapods.com/sponsorship/abc", "Hello & welcome");
+describe("buildShareCaption", () => {
+  it("appends the sponsor invite url to the message", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://vidyapods.com";
+    const caption = buildShareCaption("Asha");
 
-    expect(links.twitter).toContain("Hello%20%26%20welcome");
-    expect(links.twitter).toContain("https%3A%2F%2Fvidyapods.com%2Fsponsorship%2Fabc");
-    expect(links.whatsapp).toContain("https://wa.me/?text=");
-    expect(links.facebook).toContain("facebook.com/sharer");
-    expect(links.linkedin).toContain("linkedin.com/sharing");
+    expect(caption).toContain("Asha");
+    expect(caption.endsWith("https://vidyapods.com/sponsor")).toBe(true);
   });
 });

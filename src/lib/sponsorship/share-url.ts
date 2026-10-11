@@ -2,8 +2,6 @@ const SHARE_SLUG_BYTES = 12;
 const SHARE_SLUG_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 const DEFAULT_APP_URL = "http://localhost:3000";
 
-export const SHARE_PATH_PREFIX = "/sponsorship";
-
 const toBase64Url = (bytes: Uint8Array): string =>
   btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, "-")
@@ -19,34 +17,16 @@ export const isValidShareSlug = (slug: string): boolean => SHARE_SLUG_PATTERN.te
 export const getAppBaseUrl = (): string =>
   (process.env.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL).replace(/\/+$/, "");
 
-export const buildSponsorshipShareUrl = (slug: string | null | undefined): string | null => {
-  if (!slug || !isValidShareSlug(slug)) {
-    return null;
-  }
+/** Bare domain shown on the shareable card, e.g. "vidyapods.com". */
+export const getAppDomain = (): string => getAppBaseUrl().replace(/^https?:\/\//, "");
 
-  return `${getAppBaseUrl()}${SHARE_PATH_PREFIX}/${slug}`;
-};
+export const buildSponsorInviteUrl = (): string => `${getAppBaseUrl()}/sponsor`;
 
 export const buildShareMessage = (learnerName?: string | null): string =>
   learnerName
-    ? `I just sponsored ${learnerName}'s learning journey with Vidya Pods. Join me in funding a pod!`
-    : "I just sponsored a learner with Vidya Pods. Join me in funding a pod!";
+    ? `I'm sponsoring ${learnerName}'s education with Vidya Pods — a teacher, books and supplies so they can stay in tuition. Join me in sponsoring a child's education!`
+    : "I'm sponsoring a learner's education with Vidya Pods — a teacher, books and supplies so they can stay in tuition. Join me in sponsoring a child's education!";
 
-export type SocialShareLinks = {
-  twitter: string;
-  whatsapp: string;
-  facebook: string;
-  linkedin: string;
-};
-
-export const buildSocialShareLinks = (shareUrl: string, message: string): SocialShareLinks => {
-  const encodedUrl = encodeURIComponent(shareUrl);
-  const encodedMessage = encodeURIComponent(message);
-
-  return {
-    twitter: `https://twitter.com/intent/tweet?text=${encodedMessage}&url=${encodedUrl}`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(`${message} ${shareUrl}`)}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-  };
-};
+/** Caption a sponsor can paste alongside a screenshot of the share card. */
+export const buildShareCaption = (learnerName?: string | null): string =>
+  `${buildShareMessage(learnerName)} ${buildSponsorInviteUrl()}`;

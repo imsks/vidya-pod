@@ -58,7 +58,6 @@ describe("GET /api/sponsor/[orderId]", () => {
       status: "PENDING",
       plan: "monthly",
       amount: 400,
-      share_url: null,
       learner: {
         name: "Asha Kumar",
         standard: "8",
@@ -100,7 +99,6 @@ describe("GET /api/sponsor/[orderId]", () => {
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.data.status).toBe("SUCCESS");
-    expect(data.data.share_url).toContain("/sponsorship/abcdefghijklmnop");
   });
 
   it("returns 404 when order is not found", async () => {

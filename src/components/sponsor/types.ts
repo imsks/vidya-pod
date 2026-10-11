@@ -36,7 +36,6 @@ export interface SponsorOrderStatusResponse {
     status: string;
     plan: string;
     amount: number;
-    share_url: string | null;
     learner: {
       name: string;
       standard: string;
