@@ -17,6 +17,12 @@ const orderSelect = {
       standard: true,
     },
   },
+  sponsor: {
+    select: {
+      name: true,
+      email: true,
+    },
+  },
 } as const;
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -26,24 +32,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
     let order = await prisma.sponsorOrder.findUnique({
       where: { orderId },
-      select: {
-        orderId: true,
-        status: true,
-        plan: true,
-        amount: true,
-        learner: {
-          select: {
-            name: true,
-            standard: true,
-          },
-        },
-        sponsor: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
+      select: orderSelect,
     });
 
     if (!order) {
