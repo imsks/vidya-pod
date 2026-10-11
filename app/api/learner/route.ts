@@ -1,8 +1,97 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { getPrisma } from "@/lib/prisma";
 import { isPhotoUploadError, isPhotoValidationError, uploadEntityPhoto } from "@/lib/storage";
 import { validateAdminSecret } from "@/lib/admin-auth";
 import { parseLearnerBody } from "@/lib/validation/learner";
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 12;
+const MAX_LIMIT = 100;
+
+const STATUS_FILTERS = {
+  all: {},
+  sponsored: { sponsorId: { not: null } },
+  available: { sponsorId: null },
+} as const;
+
+type StatusFilter = keyof typeof STATUS_FILTERS;
+
+const isStatusFilter = (value: string): value is StatusFilter => value in STATUS_FILTERS;
+
+const parsePositiveInt = (value: string | null, fallback: number) => {
+  const parsed = parseInt(value ?? String(fallback), 10);
+  return Number.isNaN(parsed) ? fallback : Math.max(1, parsed);
+};
+
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const requestedStatus = searchParams.get("status") ?? "all";
+
+    if (!isStatusFilter(requestedStatus)) {
+      return NextResponse.json(
+        { error: `status must be one of: ${Object.keys(STATUS_FILTERS).join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    const page = parsePositiveInt(searchParams.get("page"), DEFAULT_PAGE);
+    const limit = Math.min(parsePositiveInt(searchParams.get("limit"), DEFAULT_LIMIT), MAX_LIMIT);
+    const where = STATUS_FILTERS[requestedStatus];
+
+    const prisma = getPrisma();
+    const [learners, totalCount, sponsoredCount, availableCount] = await Promise.all([
+      prisma.learner.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          standard: true,
+          imageUrl: true,
+          sponsorId: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.learner.count({ where }),
+      prisma.learner.count({ where: STATUS_FILTERS.sponsored }),
+      prisma.learner.count({ where: STATUS_FILTERS.available }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return NextResponse.json({
+      success: true,
+      data: learners.map((learner) => ({
+        id: learner.id,
+        name: learner.name,
+        standard: learner.standard,
+        image_url: learner.imageUrl,
+        is_sponsored: learner.sponsorId !== null,
+        created_at: learner.createdAt.toISOString(),
+      })),
+      counts: {
+        all: sponsoredCount + availableCount,
+        sponsored: sponsoredCount,
+        available: availableCount,
+      },
+      pagination: {
+        page,
+        limit,
+        total_count: totalCount,
+        total_pages: totalPages,
+        has_next_page: page < totalPages,
+        has_previous_page: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Error listing learners:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
 
 export async function POST(request: Request) {
   try {

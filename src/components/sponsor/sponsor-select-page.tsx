@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { SponsorHeader } from "./sponsor-header";
 import { LearnerGrid } from "./learner-grid";
 
@@ -19,6 +20,12 @@ export const SponsorSelectPage = () => (
           These children are waiting for a sponsor like you. Select one to begin funding their
           learning pod.
         </p>
+        <Link
+          href="/children"
+          className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+        >
+          See all children and their status →
+        </Link>
       </div>
 
       <div className="mt-16">
