@@ -18,6 +18,10 @@ out
 .env.local
 .env.production
 
+# Local import data (contains real learner details)
+data/*.json
+!data/*.example.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

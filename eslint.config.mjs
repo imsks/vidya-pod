@@ -28,6 +28,12 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    files: ["scripts/**"],
+    rules: {
+      "no-console": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
