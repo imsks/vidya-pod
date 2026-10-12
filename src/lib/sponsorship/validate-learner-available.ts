@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma";
 import { SponsorOrderStatus } from "@/generated/prisma";
+import { getReservationCutoff } from "./reservation";
 
 export type LearnerAvailabilityResult =
   | {
@@ -43,19 +44,20 @@ export const checkLearnerAvailableForSponsorship = async (
     };
   }
 
-  const pendingOrder = await prisma.sponsorOrder.findFirst({
+  const activeReservation = await prisma.sponsorOrder.findFirst({
     where: {
       learnerId,
       status: SponsorOrderStatus.PENDING,
+      createdAt: { gte: getReservationCutoff() },
     },
     select: { id: true },
   });
 
-  if (pendingOrder) {
+  if (activeReservation) {
     return {
       available: false,
       reason: "pending_order",
-      message: "This learner already has a sponsorship in progress",
+      message: "Someone is checking out for this learner right now. Please try again in a minute.",
     };
   }
 

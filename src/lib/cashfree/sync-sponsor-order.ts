@@ -30,7 +30,11 @@ export const syncSponsorOrderFromCashfree = async (
     select: { status: true },
   });
 
-  if (!existingOrder || existingOrder.status !== "PENDING") {
+  if (!existingOrder) {
+    return false;
+  }
+
+  if (existingOrder.status !== "PENDING" && existingOrder.status !== "EXPIRED") {
     return false;
   }
 

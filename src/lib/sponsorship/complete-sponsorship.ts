@@ -22,7 +22,8 @@ export const completeSponsorshipPayment = async (
     return { success: true, order, alreadyCompleted: true };
   }
 
-  if (order.status !== SponsorOrderStatus.PENDING) {
+  // An expired reservation can still be settled if the sponsor's payment lands late.
+  if (order.status !== SponsorOrderStatus.PENDING && order.status !== SponsorOrderStatus.EXPIRED) {
     return { success: false, reason: "invalid_status" };
   }
 

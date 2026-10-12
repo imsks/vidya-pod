@@ -39,7 +39,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    if (order.status === "PENDING") {
+    if (order.status === "PENDING" || order.status === "EXPIRED") {
       await syncSponsorOrderFromCashfree(prisma, orderId);
       order =
         (await prisma.sponsorOrder.findUnique({

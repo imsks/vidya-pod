@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS sponsor_orders (
   phone TEXT NOT NULL,
   plan TEXT NOT NULL CHECK (plan IN ('monthly', 'yearly')),
   amount INTEGER NOT NULL,
-  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED')),
+  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED', 'EXPIRED')),
   payment_session_id TEXT,
   share_slug TEXT UNIQUE,
   sponsor_id UUID REFERENCES sponsors(id),

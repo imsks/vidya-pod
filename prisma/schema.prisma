@@ -74,6 +74,7 @@ enum SponsorOrderStatus {
   PENDING
   SUCCESS
   FAILED
+  EXPIRED
 }
 
 /// Sponsor plan type enum

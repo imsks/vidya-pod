@@ -62,7 +62,7 @@ export interface Teacher extends BaseEntity {
 /**
  * Sponsor order status types
  */
-export type SponsorOrderStatus = "PENDING" | "SUCCESS" | "FAILED";
+export type SponsorOrderStatus = "PENDING" | "SUCCESS" | "FAILED" | "EXPIRED";
 
 /**
  * Sponsor plan types

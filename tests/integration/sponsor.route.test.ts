@@ -6,6 +6,9 @@ const MONTHLY_AMOUNT = PRICING.monthly.total;
 const YEARLY_AMOUNT = PRICING.yearly.total;
 
 const sponsorOrderCreateMock = vi.fn();
+const sponsorOrderUpdateMock = vi.fn();
+const sponsorOrderUpdateManyMock = vi.fn();
+const sponsorOrderFindManyMock = vi.fn();
 const learnerFindUniqueMock = vi.fn();
 const sponsorOrderFindFirstMock = vi.fn();
 
@@ -13,6 +16,9 @@ vi.mock("@/lib/prisma", () => ({
   getPrisma: () => ({
     sponsorOrder: {
       create: sponsorOrderCreateMock,
+      update: sponsorOrderUpdateMock,
+      updateMany: sponsorOrderUpdateManyMock,
+      findMany: sponsorOrderFindManyMock,
       findFirst: sponsorOrderFindFirstMock,
     },
     learner: {
@@ -30,12 +36,21 @@ const validPayload = {
   learner_id: LEARNER_ID,
 };
 
+const RESERVATION_ID = "reservation-1";
+
 describe("POST /api/sponsor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
     vi.unstubAllGlobals();
-    sponsorOrderCreateMock.mockResolvedValue({});
+    sponsorOrderCreateMock.mockResolvedValue({
+      id: RESERVATION_ID,
+      createdAt: new Date(),
+    });
+    sponsorOrderUpdateMock.mockResolvedValue({});
+    sponsorOrderUpdateManyMock.mockResolvedValue({ count: 0 });
+    // First call: stale reservations to release. Second: the winning active reservation.
+    sponsorOrderFindManyMock.mockResolvedValue([]);
     learnerFindUniqueMock.mockResolvedValue({
       id: LEARNER_ID,
       name: "Asha Kumar",
@@ -114,7 +129,7 @@ describe("POST /api/sponsor", () => {
     expect(response.status).toBe(409);
   });
 
-  it("returns 409 when learner has a pending order", async () => {
+  it("returns 409 when learner has an active reservation", async () => {
     sponsorOrderFindFirstMock.mockResolvedValue({ id: "pending-order" });
 
     const { POST } = await import("../../app/api/sponsor/route");
@@ -126,14 +141,18 @@ describe("POST /api/sponsor", () => {
     );
 
     expect(response.status).toBe(409);
+    expect(sponsorOrderCreateMock).not.toHaveBeenCalled();
   });
 
-  it("creates a cashfree order and persists a pending sponsor order with learnerId", async () => {
+  it("reserves the learner before calling cashfree and attaches the payment session", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ payment_session_id: "session_123" }),
     });
     vi.stubGlobal("fetch", fetchMock);
+    sponsorOrderFindManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: RESERVATION_ID }]);
 
     const { POST } = await import("../../app/api/sponsor/route");
     const response = await POST(
@@ -153,13 +172,40 @@ describe("POST /api/sponsor", () => {
         plan: "monthly",
         amount: MONTHLY_AMOUNT,
         status: "PENDING",
-        paymentSessionId: "session_123",
         learnerId: LEARNER_ID,
       }),
+      select: { id: true, createdAt: true },
+    });
+    expect(sponsorOrderUpdateMock).toHaveBeenCalledWith({
+      where: { id: RESERVATION_ID },
+      data: { paymentSessionId: "session_123" },
     });
   });
 
-  it("returns 502 when cashfree fails", async () => {
+  it("expires the reservation when a concurrent request already claimed the learner", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    sponsorOrderFindManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: "someone-else" }]);
+
+    const { POST } = await import("../../app/api/sponsor/route");
+    const response = await POST(
+      new Request("http://localhost/api/sponsor", {
+        method: "POST",
+        body: JSON.stringify(validPayload),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(sponsorOrderUpdateMock).toHaveBeenCalledWith({
+      where: { id: RESERVATION_ID },
+      data: { status: "EXPIRED" },
+    });
+  });
+
+  it("returns 502 and frees the reservation when cashfree fails", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -167,6 +213,9 @@ describe("POST /api/sponsor", () => {
         json: async () => ({ message: "bad request" }),
       }),
     );
+    sponsorOrderFindManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: RESERVATION_ID }]);
 
     const { POST } = await import("../../app/api/sponsor/route");
     const response = await POST(
@@ -179,6 +228,10 @@ describe("POST /api/sponsor", () => {
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toEqual({
       error: "Payment gateway error",
+    });
+    expect(sponsorOrderUpdateMock).toHaveBeenCalledWith({
+      where: { id: RESERVATION_ID },
+      data: { status: "FAILED" },
     });
   });
 });
