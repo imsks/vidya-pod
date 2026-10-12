@@ -200,7 +200,7 @@ function Hero() {
             <div>
               <div className="text-xs text-muted-foreground">Kids Learning</div>
               <div className="font-bold text-lg">
-                <Counter to={15} />
+                <Counter to={16} />
               </div>
             </div>
           </div>

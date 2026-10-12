@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const teacherFindManyMock = vi.fn();
 const learnerFindManyMock = vi.fn();
 const proctorFindManyMock = vi.fn();
+const sponsorFindManyMock = vi.fn();
 const sponsorOrderFindManyMock = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
@@ -10,6 +11,7 @@ vi.mock("@/lib/prisma", () => ({
     teacher: { findMany: teacherFindManyMock },
     learner: { findMany: learnerFindManyMock },
     proctor: { findMany: proctorFindManyMock },
+    sponsor: { findMany: sponsorFindManyMock },
     sponsorOrder: { findMany: sponsorOrderFindManyMock },
   }),
 }));
@@ -24,6 +26,7 @@ describe("GET /api/admin", () => {
     teacherFindManyMock.mockResolvedValue([]);
     learnerFindManyMock.mockResolvedValue([]);
     proctorFindManyMock.mockResolvedValue([]);
+    sponsorFindManyMock.mockResolvedValue([]);
     sponsorOrderFindManyMock.mockResolvedValue([]);
   });
 
@@ -68,10 +71,17 @@ describe("GET /api/admin", () => {
       learners: [],
       proctors: [],
       sponsors: [],
+      sponsor_orders: [],
     });
     expect(teacherFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
     expect(learnerFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
     expect(proctorFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
+    expect(sponsorFindManyMock).toHaveBeenCalledWith({
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { learners: true, orders: true } },
+      },
+    });
     expect(sponsorOrderFindManyMock).toHaveBeenCalledWith({
       orderBy: { createdAt: "desc" },
       include: {
@@ -80,5 +90,42 @@ describe("GET /api/admin", () => {
         },
       },
     });
+  });
+
+  it("returns sponsors with their learner and order counts", async () => {
+    sponsorFindManyMock.mockResolvedValue([
+      {
+        id: "sponsor-1",
+        name: "Asha Foundation",
+        email: "give@asha.org",
+        phone: "9999999999",
+        organization: "Asha",
+        imageUrl: null,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        _count: { learners: 3, orders: 4 },
+      },
+    ]);
+
+    const { GET } = await import("../../app/api/admin/route");
+    const response = await GET(
+      new Request("http://localhost/api/admin", {
+        headers: { "x-admin-secret": "test-secret-123" },
+      }),
+    );
+
+    const body = (await response.json()) as { sponsors: unknown[] };
+    expect(body.sponsors).toEqual([
+      {
+        id: "sponsor-1",
+        name: "Asha Foundation",
+        email: "give@asha.org",
+        phone: "9999999999",
+        organization: "Asha",
+        image_url: null,
+        learner_count: 3,
+        order_count: 4,
+        created_at: "2026-01-01T00:00:00.000Z",
+      },
+    ]);
   });
 });

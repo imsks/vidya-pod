@@ -26,6 +26,18 @@ export interface ProctorRecord {
   created_at?: string;
 }
 
+export interface SponsorRecord {
+  id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  organization?: string | null;
+  image_url?: string | null;
+  learner_count: number;
+  order_count: number;
+  created_at?: string;
+}
+
 export interface SponsorOrderRecord {
   id?: string;
   order_id: string;
@@ -45,5 +57,6 @@ export interface AdminDashboardData {
   teachers: TeacherRecord[];
   learners: LearnerRecord[];
   proctors: ProctorRecord[];
-  sponsors: SponsorOrderRecord[];
+  sponsors: SponsorRecord[];
+  sponsor_orders: SponsorOrderRecord[];
 }
