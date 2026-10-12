@@ -74,7 +74,7 @@
     "jsdom": "^29.1.1",
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.6",
-    "prisma": "^8.0.0-rc.22",
+    "prisma": "^7.10.0",
     "typescript": "^5.8.3",
     "vitest": "^4.1.10"
   }
