@@ -100,6 +100,9 @@ function Nav() {
           <Link href="/sponsor" className="hover:text-foreground transition">
             Sponsor
           </Link>
+          <Link href="/transparency" className="hover:text-foreground transition">
+            Transparency
+          </Link>
         </nav>
         <Link
           href="/sponsor"

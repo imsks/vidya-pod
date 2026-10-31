@@ -139,7 +139,7 @@ describe("POST /api/register", () => {
     });
   });
 
-  it("returns 500 when prisma insert fails", async () => {
+  it("returns 500 without leaking the underlying error when prisma insert fails", async () => {
     teacherCreateMock.mockRejectedValueOnce(new Error("db down"));
     const { POST } = await import("../../app/api/register/route");
 
@@ -157,6 +157,6 @@ describe("POST /api/register", () => {
     );
 
     expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: "db down" });
+    await expect(response.json()).resolves.toEqual({ error: "Internal server error" });
   });
 });

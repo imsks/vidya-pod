@@ -5,6 +5,7 @@ const learnerFindManyMock = vi.fn();
 const proctorFindManyMock = vi.fn();
 const sponsorFindManyMock = vi.fn();
 const sponsorOrderFindManyMock = vi.fn();
+const expenseFindManyMock = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   getPrisma: () => ({
@@ -13,6 +14,7 @@ vi.mock("@/lib/prisma", () => ({
     proctor: { findMany: proctorFindManyMock },
     sponsor: { findMany: sponsorFindManyMock },
     sponsorOrder: { findMany: sponsorOrderFindManyMock },
+    expense: { findMany: expenseFindManyMock },
   }),
 }));
 
@@ -28,6 +30,7 @@ describe("GET /api/admin", () => {
     proctorFindManyMock.mockResolvedValue([]);
     sponsorFindManyMock.mockResolvedValue([]);
     sponsorOrderFindManyMock.mockResolvedValue([]);
+    expenseFindManyMock.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -72,6 +75,7 @@ describe("GET /api/admin", () => {
       proctors: [],
       sponsors: [],
       sponsor_orders: [],
+      expenses: [],
     });
     expect(teacherFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
     expect(learnerFindManyMock).toHaveBeenCalledWith({ orderBy: { createdAt: "desc" } });
@@ -90,6 +94,41 @@ describe("GET /api/admin", () => {
         },
       },
     });
+    expect(expenseFindManyMock).toHaveBeenCalledWith({
+      orderBy: [{ incurredAt: "desc" }, { createdAt: "desc" }],
+    });
+  });
+
+  it("returns expenses without exposing them outside the admin response", async () => {
+    expenseFindManyMock.mockResolvedValue([
+      {
+        id: "expense-1",
+        category: "STATIONERY",
+        amount: 500,
+        description: "Notebooks for the pod",
+        incurredAt: new Date("2026-10-30T00:00:00.000Z"),
+        createdAt: new Date("2026-10-30T10:00:00.000Z"),
+      },
+    ]);
+
+    const { GET } = await import("../../app/api/admin/route");
+    const response = await GET(
+      new Request("http://localhost/api/admin", {
+        headers: { "x-admin-secret": "test-secret-123" },
+      }),
+    );
+
+    const body = (await response.json()) as { expenses: unknown[] };
+    expect(body.expenses).toEqual([
+      {
+        id: "expense-1",
+        category: "STATIONERY",
+        amount: 500,
+        description: "Notebooks for the pod",
+        incurred_at: "2026-10-30",
+        created_at: "2026-10-30T10:00:00.000Z",
+      },
+    ]);
   });
 
   it("returns sponsors with their learner and order counts", async () => {

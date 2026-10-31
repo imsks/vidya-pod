@@ -1,52 +1,27 @@
 import { NextResponse } from "next/server";
+import { internalError, jsonError } from "@/lib/api/respond";
 import { syncSponsorOrderFromCashfree } from "@/lib/cashfree/sync-sponsor-order";
+import { getSponsorOrderForStatus } from "@/lib/data/sponsor-order";
 import { getPrisma } from "@/lib/prisma";
 
 type RouteContext = {
   params: Promise<{ orderId: string }>;
 };
 
-const orderSelect = {
-  orderId: true,
-  status: true,
-  plan: true,
-  amount: true,
-  learner: {
-    select: {
-      name: true,
-      standard: true,
-      sponsorshipEndsAt: true,
-    },
-  },
-  sponsor: {
-    select: {
-      name: true,
-      email: true,
-    },
-  },
-} as const;
-
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { orderId } = await context.params;
     const prisma = getPrisma();
 
-    let order = await prisma.sponsorOrder.findUnique({
-      where: { orderId },
-      select: orderSelect,
-    });
+    let order = await getSponsorOrderForStatus(prisma, orderId);
 
     if (!order) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      return jsonError("Order not found", 404);
     }
 
     if (order.status === "PENDING" || order.status === "EXPIRED") {
       await syncSponsorOrderFromCashfree(prisma, orderId);
-      order =
-        (await prisma.sponsorOrder.findUnique({
-          where: { orderId },
-          select: orderSelect,
-        })) ?? order;
+      order = (await getSponsorOrderForStatus(prisma, orderId)) ?? order;
     }
 
     return NextResponse.json({
@@ -63,17 +38,10 @@ export async function GET(_request: Request, context: RouteContext) {
             }
           : null,
         sponsored_until: order.learner?.sponsorshipEndsAt?.toISOString() ?? null,
-        sponsor: order.sponsor
-          ? {
-              name: order.sponsor.name,
-              email: order.sponsor.email,
-            }
-          : null,
+        sponsor: order.sponsor ? { name: order.sponsor.name } : null,
       },
     });
   } catch (error) {
-    console.error("Error fetching sponsor order:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return internalError(error, "Error fetching sponsor order");
   }
 }

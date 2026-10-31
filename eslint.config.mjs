@@ -34,6 +34,32 @@ const eslintConfig = defineConfig([
       "no-console": "off",
     },
   },
+  {
+    // Browser-reachable modules must go through /api, never straight to the database.
+    files: ["src/components/**", "app/**/page.tsx", "app/**/layout.tsx"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "@/lib/prisma",
+                "@/lib/supabase",
+                "@/lib/admin-auth",
+                "@/lib/data",
+                "@/lib/data/*",
+                "@/generated/prisma",
+              ],
+              message:
+                "Server-only module. Fetch from an /api route instead, or use `import type` if you only need types.",
+              allowTypeImports: true,
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

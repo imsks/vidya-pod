@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { SponsorOrderStatus } from "@/generated/prisma";
+import { internalError, jsonError } from "@/lib/api/respond";
 import { buildCashfreeHeaders, getCashfreeBaseUrl } from "@/lib/cashfree/config";
+import { attachPaymentSession, markSponsorOrderFailed } from "@/lib/data/sponsor-order";
 import { getPrisma } from "@/lib/prisma";
 import {
   releaseExpiredReservations,
@@ -15,10 +16,7 @@ const abandonReservation = async (
   reservationId: string,
 ): Promise<void> => {
   try {
-    await prisma.sponsorOrder.update({
-      where: { id: reservationId },
-      data: { status: SponsorOrderStatus.FAILED },
-    });
+    await markSponsorOrderFailed(prisma, reservationId);
   } catch (error) {
     console.error("Failed to release sponsor reservation:", error);
   }
@@ -30,10 +28,18 @@ export async function POST(request: Request) {
     const parsed = parseSponsorBody(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+      return jsonError(parsed.error, parsed.status);
     }
 
-    const { name, email, phone, plan, amount, learner_id: learnerId } = parsed.data;
+    const {
+      name,
+      email,
+      phone,
+      plan,
+      amount,
+      learner_id: learnerId,
+      public_acknowledgement_opt_in: publicAcknowledgementOptIn,
+    } = parsed.data;
     const prisma = getPrisma();
 
     await releaseExpiredReservations(prisma, learnerId);
@@ -41,7 +47,7 @@ export async function POST(request: Request) {
     const availability = await checkLearnerAvailableForSponsorship(prisma, learnerId);
     if (!availability.available) {
       const status = availability.reason === "not_found" ? 404 : 409;
-      return NextResponse.json({ error: availability.message }, { status });
+      return jsonError(availability.message, status);
     }
 
     const orderId = createSponsorOrderId();
@@ -55,12 +61,13 @@ export async function POST(request: Request) {
       plan,
       amount,
       learnerId,
+      publicAcknowledgementOptIn,
     });
 
     if (!reservation.reserved) {
-      return NextResponse.json(
-        { error: "Someone is checking out for this learner right now. Please try again." },
-        { status: 409 },
+      return jsonError(
+        "Someone is checking out for this learner right now. Please try again.",
+        409,
       );
     }
 
@@ -94,23 +101,18 @@ export async function POST(request: Request) {
       const errData = await cashfreeRes.json().catch(() => null);
       console.error("Cashfree error:", errData);
       await abandonReservation(prisma, reservation.id);
-      return NextResponse.json({ error: "Payment gateway error" }, { status: 502 });
+      return jsonError("Payment gateway error", 502);
     }
 
     const cashfreeData = await cashfreeRes.json();
 
-    await prisma.sponsorOrder.update({
-      where: { id: reservation.id },
-      data: { paymentSessionId: cashfreeData.payment_session_id },
-    });
+    await attachPaymentSession(prisma, reservation.id, cashfreeData.payment_session_id);
 
     return NextResponse.json({
       orderId,
       paymentSessionId: cashfreeData.payment_session_id,
     });
   } catch (error) {
-    console.error("Error in sponsor route:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return internalError(error, "Error in sponsor route");
   }
 }

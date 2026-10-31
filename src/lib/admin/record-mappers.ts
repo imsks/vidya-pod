@@ -1,4 +1,5 @@
-import type { Learner, Proctor, Sponsor, SponsorOrder, Teacher } from "@/generated/prisma";
+import type { Expense, Learner, Proctor, Sponsor, SponsorOrder, Teacher } from "@/generated/prisma";
+import { isLearnerSponsored } from "@/lib/sponsorship/availability";
 
 export const mapTeacher = (teacher: Teacher) => ({
   id: teacher.id,
@@ -62,4 +63,29 @@ export const mapSponsorOrder = (order: SponsorOrderWithLearner) => ({
   learner_id: order.learnerId,
   learner_name: order.learner?.name ?? null,
   created_at: order.createdAt.toISOString(),
+});
+
+export const mapExpense = (expense: Expense) => ({
+  id: expense.id,
+  category: expense.category,
+  amount: expense.amount,
+  description: expense.description,
+  incurred_at: expense.incurredAt.toISOString().slice(0, 10),
+  created_at: expense.createdAt.toISOString(),
+});
+
+export type PublicLearnerRecord = Pick<
+  Learner,
+  "id" | "name" | "standard" | "imageUrl" | "sponsorId" | "sponsorshipEndsAt" | "createdAt"
+>;
+
+/** Browser-facing learner projection — omits phone and other contact details. */
+export const mapPublicLearner = (learner: PublicLearnerRecord, now: Date) => ({
+  id: learner.id,
+  name: learner.name,
+  standard: learner.standard,
+  image_url: learner.imageUrl,
+  is_sponsored: isLearnerSponsored(learner, now),
+  sponsorship_ends_at: learner.sponsorshipEndsAt?.toISOString() ?? null,
+  created_at: learner.createdAt.toISOString(),
 });

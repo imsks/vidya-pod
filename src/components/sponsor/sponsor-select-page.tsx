@@ -91,11 +91,13 @@ export const SponsorSelectPage = () => {
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="p-6 rounded-2xl bg-card border border-border shadow-soft animate-pulse"
+              className="flex flex-col items-center rounded-2xl border border-border bg-card p-5 shadow-soft animate-pulse"
             >
-              <div className="w-20 h-20 rounded-full bg-muted mx-auto" />
-              <div className="mt-4 h-5 bg-muted rounded w-3/4 mx-auto" />
-              <div className="mt-2 h-4 bg-muted rounded w-1/2 mx-auto" />
+              <div className="h-24 w-24 rounded-full bg-muted" />
+              <div className="mt-4 h-5 w-3/4 rounded bg-muted" />
+              <div className="mt-2 h-4 w-1/3 rounded bg-muted" />
+              <div className="mt-3 h-3 w-2/3 rounded bg-muted" />
+              <div className="mt-6 h-10 w-full rounded-full bg-muted" />
             </div>
           ))}
         </div>

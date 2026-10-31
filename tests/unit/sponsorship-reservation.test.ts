@@ -105,6 +105,7 @@ describe("sponsorship reservation", () => {
       plan: "monthly" as const,
       amount: 400,
       learnerId: LEARNER_ID,
+      publicAcknowledgementOptIn: false,
     };
 
     it("reserves when this order is the earliest active claim", async () => {

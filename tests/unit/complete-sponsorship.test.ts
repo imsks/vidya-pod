@@ -12,9 +12,17 @@ type CompletionPrismaOptions = {
   order?: Record<string, unknown>;
   learner: { sponsorId: string | null; sponsorshipEndsAt: Date | null };
   learnerUpdate: ReturnType<typeof vi.fn>;
+  sponsor?: { id: string } | null;
+  sponsorUpdate?: ReturnType<typeof vi.fn>;
 };
 
-const buildCompletionPrisma = ({ order, learner, learnerUpdate }: CompletionPrismaOptions) => {
+const buildCompletionPrisma = ({
+  order,
+  learner,
+  learnerUpdate,
+  sponsor = { id: "sponsor-1" },
+  sponsorUpdate = vi.fn().mockResolvedValue({ id: "sponsor-1" }),
+}: CompletionPrismaOptions) => {
   const baseOrder = {
     id: "order-1",
     orderId: "VP_123",
@@ -24,6 +32,7 @@ const buildCompletionPrisma = ({ order, learner, learnerUpdate }: CompletionPris
     phone: "9999999999",
     plan: "monthly",
     learnerId: "learner-1",
+    publicAcknowledgementOptIn: false,
     ...order,
   };
 
@@ -34,8 +43,9 @@ const buildCompletionPrisma = ({ order, learner, learnerUpdate }: CompletionPris
     $transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
       callback({
         sponsor: {
-          findFirst: vi.fn().mockResolvedValue({ id: "sponsor-1" }),
+          findFirst: vi.fn().mockResolvedValue(sponsor),
           create: vi.fn().mockResolvedValue({ id: "sponsor-1" }),
+          update: sponsorUpdate,
         },
         sponsorOrder: {
           update: vi.fn().mockResolvedValue({ ...baseOrder, status: SponsorOrderStatus.SUCCESS }),
@@ -94,11 +104,13 @@ describe("completeSponsorshipPayment", () => {
       phone: "9999999999",
       plan: "monthly",
       learnerId: "learner-1",
+      publicAcknowledgementOptIn: false,
     };
 
     const updatedOrder = { ...order, status: SponsorOrderStatus.SUCCESS, sponsorId: "sponsor-1" };
 
     const sponsorCreate = vi.fn().mockResolvedValue({ id: "sponsor-1" });
+    const sponsorUpdate = vi.fn().mockResolvedValue({ id: "sponsor-1" });
     const sponsorFindFirst = vi.fn().mockResolvedValue(null);
     const sponsorOrderUpdate = vi.fn().mockResolvedValue(updatedOrder);
     const learnerFindUnique = vi
@@ -115,6 +127,7 @@ describe("completeSponsorshipPayment", () => {
           sponsor: {
             findFirst: sponsorFindFirst,
             create: sponsorCreate,
+            update: sponsorUpdate,
           },
           sponsorOrder: {
             update: sponsorOrderUpdate,
@@ -135,8 +148,10 @@ describe("completeSponsorshipPayment", () => {
         name: "Donor",
         email: "donor@example.com",
         phone: "9999999999",
+        showPublicly: false,
       },
     });
+    expect(sponsorUpdate).not.toHaveBeenCalled();
     expect(learnerUpdate).toHaveBeenCalledWith({
       where: { id: "learner-1" },
       data: {
@@ -154,6 +169,24 @@ describe("completeSponsorshipPayment", () => {
     });
 
     vi.useRealTimers();
+  });
+
+  it("applies the sponsor's public acknowledgement choice after payment", async () => {
+    const sponsorUpdate = vi.fn().mockResolvedValue({ id: "sponsor-1" });
+    const learnerUpdate = vi.fn().mockResolvedValue({});
+    const prisma = buildCompletionPrisma({
+      order: { publicAcknowledgementOptIn: true },
+      learner: { sponsorId: "sponsor-1", sponsorshipEndsAt: null },
+      learnerUpdate,
+      sponsorUpdate,
+    });
+
+    await completeSponsorshipPayment(prisma as never, "VP_123");
+
+    expect(sponsorUpdate).toHaveBeenCalledWith({
+      where: { id: "sponsor-1" },
+      data: { showPublicly: true },
+    });
   });
 
   it("gives yearly orders a twelve month period", async () => {

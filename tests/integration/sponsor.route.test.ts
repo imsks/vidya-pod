@@ -34,6 +34,7 @@ const validPayload = {
   plan: "monthly" as const,
   amount: MONTHLY_AMOUNT,
   learner_id: LEARNER_ID,
+  public_acknowledgement_opt_in: true,
 };
 
 const RESERVATION_ID = "reservation-1";
@@ -175,6 +176,7 @@ describe("POST /api/sponsor", () => {
         amount: MONTHLY_AMOUNT,
         status: "PENDING",
         learnerId: LEARNER_ID,
+        publicAcknowledgementOptIn: true,
       }),
       select: { id: true, createdAt: true },
     });

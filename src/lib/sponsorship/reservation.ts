@@ -25,6 +25,7 @@ export type ReservationInput = {
   plan: SponsorPlanType;
   amount: number;
   learnerId: string;
+  publicAcknowledgementOptIn: boolean;
 };
 
 export type ReservationResult =

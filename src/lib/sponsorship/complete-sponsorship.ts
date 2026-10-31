@@ -41,7 +41,13 @@ export const completeSponsorshipPayment = async (
           name: order.name,
           email: order.email,
           phone: order.phone,
+          showPublicly: order.publicAcknowledgementOptIn,
         },
+      });
+    } else {
+      sponsor = await tx.sponsor.update({
+        where: { id: sponsor.id },
+        data: { showPublicly: order.publicAcknowledgementOptIn },
       });
     }
 

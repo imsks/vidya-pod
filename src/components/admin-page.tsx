@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { clearAdminSessionPin, setAdminSessionPin } from "@/lib/admin-session";
 import { isLearnerSponsored } from "@/lib/sponsorship/availability";
+import type { ExpenseRecord } from "@/types/admin";
 import type { AdminEditableEntity } from "@/lib/validation/admin-entity-update";
 import type {
   AdminDashboardData,
@@ -14,8 +15,9 @@ import type {
   TeacherRecord,
 } from "@/types/admin";
 import { AdminEntityEditDialog, type EditableRecord } from "./admin-entity-edit-dialog";
+import { AdminExpensesPanel } from "./admin-expenses-panel";
 
-type Tab = "teachers" | "learners" | "proctors" | "sponsors" | "sponsor-orders";
+type Tab = "teachers" | "learners" | "proctors" | "sponsors" | "sponsor-orders" | "expenses";
 
 type ActionTarget = { entity: AdminEditableEntity; record: EditableRecord };
 
@@ -48,6 +50,7 @@ export function AdminPage() {
   const [proctors, setProctors] = useState<ProctorRecord[]>([]);
   const [sponsors, setSponsors] = useState<SponsorRecord[]>([]);
   const [sponsorOrders, setSponsorOrders] = useState<SponsorOrderRecord[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [editTarget, setEditTarget] = useState<ActionTarget | null>(null);
@@ -104,6 +107,7 @@ export function AdminPage() {
       setProctors(data.proctors ?? []);
       setSponsors(data.sponsors ?? []);
       setSponsorOrders(data.sponsor_orders ?? []);
+      setExpenses(data.expenses ?? []);
     } catch (err) {
       console.error("Failed to load admin data", err);
     } finally {
@@ -196,6 +200,7 @@ export function AdminPage() {
     { key: "learners", label: "Learners", count: learners.length, icon: "🧒" },
     { key: "proctors", label: "Proctors", count: proctors.length, icon: "🛡️" },
     { key: "sponsors", label: "Sponsors", count: sponsors.length, icon: "🤝" },
+    { key: "expenses", label: "Expenses", count: expenses.length, icon: "🧾" },
     {
       key: "sponsor-orders",
       label: "Sponsor Orders",
@@ -262,7 +267,7 @@ export function AdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
           {tabs.map((t) => (
             <div key={t.key} className="p-5 rounded-2xl bg-card border border-border shadow-soft">
               <div className="text-2xl">{t.icon}</div>
@@ -270,6 +275,12 @@ export function AdminPage() {
               <div className="text-sm text-muted-foreground">{t.label}</div>
             </div>
           ))}
+          <Link
+            href="/transparency"
+            className="ml-auto self-center text-sm font-semibold text-primary hover:underline"
+          >
+            Public transparency page →
+          </Link>
         </div>
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -307,6 +318,8 @@ export function AdminPage() {
 
         {loading ? (
           <div className="text-center py-20 text-muted-foreground">Loading...</div>
+        ) : activeTab === "expenses" ? (
+          <AdminExpensesPanel expenses={expenses} sessionPin={sessionPin} onChanged={loadData} />
         ) : (
           <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
             {activeTab === "teachers" && (

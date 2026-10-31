@@ -94,9 +94,10 @@ describe("GET /api/sponsor/[orderId]", () => {
       sponsored_until: "2027-11-05T10:00:00.000Z",
       sponsor: {
         name: "Priya Patel",
-        email: "priya@example.com",
       },
     });
+    // This endpoint is unauthenticated, so donor contact details must never be returned.
+    expect(JSON.stringify(data)).not.toContain("priya@example.com");
   });
 
   it("returns updated status after Cashfree sync completes the order", async () => {

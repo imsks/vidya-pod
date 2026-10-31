@@ -17,6 +17,26 @@ describe("parseSponsorBody", () => {
     });
 
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.public_acknowledgement_opt_in).toBe(false);
+    }
+  });
+
+  it("preserves an explicit public acknowledgement opt-in", () => {
+    const result = parseSponsorBody({
+      name: "Donor",
+      email: "donor@example.com",
+      phone: "9999999999",
+      plan: "monthly",
+      amount: MONTHLY_AMOUNT,
+      learner_id: LEARNER_ID,
+      public_acknowledgement_opt_in: true,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.public_acknowledgement_opt_in).toBe(true);
+    }
   });
 
   it("rejects invalid email", () => {
