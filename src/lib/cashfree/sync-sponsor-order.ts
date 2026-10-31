@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma";
+import { SponsorOrderStatus } from "@/generated/prisma";
 import { isCashfreeConfigured } from "@/lib/cashfree/config";
 import {
   fetchCashfreeOrder,
@@ -8,23 +9,31 @@ import {
   isCashfreeOrderPaid,
   isCashfreeOrderTerminalFailure,
 } from "@/lib/cashfree/fetch-order";
+import { completeCartPayment, failCartPayment } from "@/lib/sponsorship/complete-cart";
 import {
   completeSponsorshipPayment,
   failSponsorshipPayment,
 } from "@/lib/sponsorship/complete-sponsorship";
+import { isCartOrderId } from "@/lib/validation/sponsorship-cart";
 
-/**
- * Reconcile a pending sponsor order against Cashfree when webhooks are unavailable
- * (e.g. localhost) or delayed. Returns true when the local order status was updated.
- */
-export const syncSponsorOrderFromCashfree = async (
-  prisma: PrismaClient,
-  orderId: string,
-): Promise<boolean> => {
-  if (!isCashfreeConfigured()) {
-    return false;
-  }
+type SettleResult = { success: boolean; alreadyCompleted?: boolean };
 
+type Settlers = {
+  complete: (prisma: PrismaClient, orderId: string) => Promise<SettleResult>;
+  fail: (prisma: PrismaClient, orderId: string) => Promise<SettleResult>;
+};
+
+const singleOrderSettlers: Settlers = {
+  complete: completeSponsorshipPayment,
+  fail: failSponsorshipPayment,
+};
+
+const cartPaymentSettlers: Settlers = {
+  complete: completeCartPayment,
+  fail: failCartPayment,
+};
+
+const needsSingleOrderSync = async (prisma: PrismaClient, orderId: string): Promise<boolean> => {
   const existingOrder = await prisma.sponsorOrder.findUnique({
     where: { orderId },
     select: { status: true },
@@ -34,7 +43,53 @@ export const syncSponsorOrderFromCashfree = async (
     return false;
   }
 
-  if (existingOrder.status !== "PENDING" && existingOrder.status !== "EXPIRED") {
+  return existingOrder.status === "PENDING" || existingOrder.status === "EXPIRED";
+};
+
+/** A combined payment needs reconciling while any of its learners is still unsettled. */
+const needsCartPaymentSync = async (
+  prisma: PrismaClient,
+  paymentOrderId: string,
+): Promise<boolean> => {
+  const unsettled = await prisma.sponsorOrder.count({
+    where: {
+      paymentOrderId,
+      status: { in: [SponsorOrderStatus.PENDING, SponsorOrderStatus.EXPIRED] },
+    },
+  });
+
+  return unsettled > 0;
+};
+
+const settle = async (
+  settler: Settlers[keyof Settlers],
+  prisma: PrismaClient,
+  orderId: string,
+): Promise<boolean> => {
+  const result = await settler(prisma, orderId);
+  return result.success && !result.alreadyCompleted;
+};
+
+/**
+ * Reconcile a pending sponsor order against Cashfree when webhooks are unavailable
+ * (e.g. localhost) or delayed. Returns true when the local order status was updated.
+ * Cart order ids reconcile every learner order that shares the combined payment.
+ */
+export const syncSponsorOrderFromCashfree = async (
+  prisma: PrismaClient,
+  orderId: string,
+): Promise<boolean> => {
+  if (!isCashfreeConfigured()) {
+    return false;
+  }
+
+  const isCartPayment = isCartOrderId(orderId);
+  const settlers = isCartPayment ? cartPaymentSettlers : singleOrderSettlers;
+  const needsSync = isCartPayment
+    ? await needsCartPaymentSync(prisma, orderId)
+    : await needsSingleOrderSync(prisma, orderId);
+
+  if (!needsSync) {
     return false;
   }
 
@@ -46,25 +101,21 @@ export const syncSponsorOrderFromCashfree = async (
     }
 
     if (isCashfreeOrderPaid(cashfreeOrder)) {
-      const result = await completeSponsorshipPayment(prisma, orderId);
-      return result.success && !result.alreadyCompleted;
+      return await settle(settlers.complete, prisma, orderId);
     }
 
     if (isCashfreeOrderTerminalFailure(cashfreeOrder)) {
-      const result = await failSponsorshipPayment(prisma, orderId);
-      return result.success && !result.alreadyCompleted;
+      return await settle(settlers.fail, prisma, orderId);
     }
 
     const payments = await fetchCashfreePaymentsForOrder(orderId);
 
     if (hasSuccessfulCashfreePayment(payments)) {
-      const result = await completeSponsorshipPayment(prisma, orderId);
-      return result.success && !result.alreadyCompleted;
+      return await settle(settlers.complete, prisma, orderId);
     }
 
     if (hasTerminalFailedCashfreePayment(payments)) {
-      const result = await failSponsorshipPayment(prisma, orderId);
-      return result.success && !result.alreadyCompleted;
+      return await settle(settlers.fail, prisma, orderId);
     }
 
     return false;

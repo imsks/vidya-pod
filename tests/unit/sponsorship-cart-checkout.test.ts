@@ -192,6 +192,7 @@ describe("startCartCheckout", () => {
 
     expect(result.ok && result.data.replayed).toBe(false);
     expect(result.ok && result.data.orderId).not.toBe("VPC_1_old");
+    expect(syncSponsorOrderFromCashfreeMock).toHaveBeenCalledWith(db.prisma, "VPC_1_old");
     expect(oldHold.status).toBe("EXPIRED");
   });
 
@@ -295,6 +296,24 @@ describe("startCartCheckout", () => {
 
     expect(result.ok).toBe(true);
     expect(syncSponsorOrderFromCashfreeMock).toHaveBeenCalledWith(db.prisma, "VP_stale");
+    expect(stale.status).toBe("EXPIRED");
+  });
+
+  it("reconciles a lapsed hold from another cart by its shared payment id", async () => {
+    const { startCartCheckout } = await import("@/lib/sponsorship/cart-checkout");
+    const cart = seedCartWith(ASHA);
+    const stale = db.seedOrder({
+      orderId: "VPC_9_other-1",
+      paymentOrderId: "VPC_9_other",
+      learnerId: ASHA,
+      createdAt: minutesAgo(5),
+    });
+
+    const result = await startCartCheckout(db.prisma, cart.id, { ...donor, amount: MONTHLY_TOTAL });
+
+    expect(result.ok).toBe(true);
+    expect(syncSponsorOrderFromCashfreeMock).toHaveBeenCalledWith(db.prisma, "VPC_9_other");
+    expect(syncSponsorOrderFromCashfreeMock).not.toHaveBeenCalledWith(db.prisma, "VPC_9_other-1");
     expect(stale.status).toBe("EXPIRED");
   });
 

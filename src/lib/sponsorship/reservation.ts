@@ -48,13 +48,14 @@ export const releaseExpiredReservations = async (
       status: SponsorOrderStatus.PENDING,
       createdAt: { lt: getReservationCutoff() },
     },
-    select: { id: true, orderId: true },
+    select: { id: true, orderId: true, paymentOrderId: true },
   });
 
   let released = 0;
 
   for (const order of staleOrders) {
-    await syncSponsorOrderFromCashfree(prisma, order.orderId);
+    // Learners checked out together share one Cashfree order.
+    await syncSponsorOrderFromCashfree(prisma, order.paymentOrderId ?? order.orderId);
 
     const { count } = await prisma.sponsorOrder.updateMany({
       where: { id: order.id, status: SponsorOrderStatus.PENDING },

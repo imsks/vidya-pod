@@ -3,6 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const completeSponsorshipPaymentMock = vi.fn();
 const failSponsorshipPaymentMock = vi.fn();
+const completeCartPaymentMock = vi.fn();
+const failCartPaymentMock = vi.fn();
+
+vi.mock("@/lib/sponsorship/complete-cart", () => ({
+  completeCartPayment: completeCartPaymentMock,
+  failCartPayment: failCartPaymentMock,
+}));
 
 vi.mock("@/lib/sponsorship/complete-sponsorship", () => ({
   completeSponsorshipPayment: completeSponsorshipPaymentMock,
@@ -45,6 +52,18 @@ describe("POST /api/webhooks/cashfree", () => {
     failSponsorshipPaymentMock.mockResolvedValue({
       success: true,
       order: { status: "FAILED" },
+      alreadyCompleted: false,
+    });
+    completeCartPaymentMock.mockResolvedValue({
+      success: true,
+      status: "SUCCESS",
+      orders: [{}, {}],
+      alreadyCompleted: false,
+    });
+    failCartPaymentMock.mockResolvedValue({
+      success: true,
+      status: "FAILED",
+      orders: [{}, {}],
       alreadyCompleted: false,
     });
   });
@@ -101,5 +120,69 @@ describe("POST /api/webhooks/cashfree", () => {
     );
 
     expect(response.status).toBe(400);
+  });
+
+  describe("for a payment covering several learners", () => {
+    it("settles every learner on payment success", async () => {
+      const { POST } = await import("../../app/api/webhooks/cashfree/route");
+      const response = await POST(
+        createSignedRequest({
+          type: "PAYMENT_SUCCESS_WEBHOOK",
+          data: { order: { order_id: "VPC_123_test" } },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        success: true,
+        status: "SUCCESS",
+        learner_count: 2,
+      });
+      expect(completeCartPaymentMock).toHaveBeenCalledWith(expect.anything(), "VPC_123_test");
+      expect(completeSponsorshipPaymentMock).not.toHaveBeenCalled();
+    });
+
+    it("releases every learner on payment failure", async () => {
+      const { POST } = await import("../../app/api/webhooks/cashfree/route");
+      const response = await POST(
+        createSignedRequest({
+          type: "PAYMENT_FAILED_WEBHOOK",
+          data: { order: { order_id: "VPC_123_test" } },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toMatchObject({ status: "FAILED" });
+      expect(failCartPaymentMock).toHaveBeenCalledWith(expect.anything(), "VPC_123_test");
+      expect(failSponsorshipPaymentMock).not.toHaveBeenCalled();
+    });
+
+    it("returns 404 for an unknown payment", async () => {
+      completeCartPaymentMock.mockResolvedValue({ success: false, reason: "order_not_found" });
+
+      const { POST } = await import("../../app/api/webhooks/cashfree/route");
+      const response = await POST(
+        createSignedRequest({
+          type: "PAYMENT_SUCCESS_WEBHOOK",
+          data: { order: { order_id: "VPC_123_test" } },
+        }),
+      );
+
+      expect(response.status).toBe(404);
+    });
+
+    it("acknowledges other events without settling", async () => {
+      const { POST } = await import("../../app/api/webhooks/cashfree/route");
+      const response = await POST(
+        createSignedRequest({
+          type: "PAYMENT_USER_DROPPED_WEBHOOK",
+          data: { order: { order_id: "VPC_123_test" } },
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(completeCartPaymentMock).not.toHaveBeenCalled();
+      expect(failCartPaymentMock).not.toHaveBeenCalled();
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyCashfreeWebhookSignature } from "@/lib/cashfree/verify-webhook";
 import { getPrisma } from "@/lib/prisma";
+import { completeCartPayment, failCartPayment } from "@/lib/sponsorship/complete-cart";
 import {
   completeSponsorshipPayment,
   failSponsorshipPayment,
@@ -9,6 +10,7 @@ import {
   isPaymentSuccessWebhook,
   type CashfreeWebhookPayload,
 } from "@/lib/sponsorship/complete-sponsorship";
+import { isCartOrderId } from "@/lib/validation/sponsorship-cart";
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +31,31 @@ export async function POST(request: Request) {
     }
 
     const prisma = getPrisma();
+
+    // One payment for several learners settles all of their orders together.
+    if (isCartOrderId(orderId)) {
+      const settle = isPaymentSuccessWebhook(payload)
+        ? completeCartPayment
+        : isPaymentFailedWebhook(payload)
+          ? failCartPayment
+          : null;
+
+      if (!settle) {
+        return NextResponse.json({ success: true, message: "Webhook received" });
+      }
+
+      const result = await settle(prisma, orderId);
+
+      if (!result.success) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        status: result.status,
+        learner_count: result.orders.length,
+      });
+    }
 
     if (isPaymentSuccessWebhook(payload)) {
       const result = await completeSponsorshipPayment(prisma, orderId);

@@ -68,7 +68,10 @@ export const isValidUuid = (value: string): boolean => z.string().uuid().safePar
 export const createCartOrderId = (now = Date.now(), random = Math.random): string =>
   `${CART_ORDER_PREFIX}${now}_${random().toString(36).slice(2, 8)}`;
 
-export const isCartOrderId = (orderId: string): boolean => orderId.startsWith(CART_ORDER_PREFIX);
+const CART_ORDER_ID_PATTERN = new RegExp(`^${CART_ORDER_PREFIX}\\d+_[a-z0-9]*$`);
+
+/** True for a combined cart payment id; per-learner line ids (`…-1`) are not payment ids. */
+export const isCartOrderId = (orderId: string): boolean => CART_ORDER_ID_PATTERN.test(orderId);
 
 /** Each learner in a combined payment keeps its own order row, keyed off the shared order id. */
 export const buildCartLineOrderId = (paymentOrderId: string, position: number): string =>

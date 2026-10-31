@@ -139,6 +139,13 @@ describe("cart order ids", () => {
     expect(buildCartLineOrderId("VPC_1_abc", 1)).toBe("VPC_1_abc-1");
     expect(buildCartLineOrderId("VPC_1_abc", 10)).toBe("VPC_1_abc-10");
   });
+
+  it("does not treat per-learner line ids as combined payment ids", () => {
+    expect(isCartOrderId("VPC_1_abc")).toBe(true);
+    expect(isCartOrderId(buildCartLineOrderId("VPC_1_abc", 1))).toBe(false);
+    expect(isCartOrderId("VPC_")).toBe(false);
+    expect(isCartOrderId("XVPC_1_abc")).toBe(false);
+  });
 });
 
 describe("isValidUuid", () => {

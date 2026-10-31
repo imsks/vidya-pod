@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MONTHLY_TOTAL, YEARLY_TOTAL } from "@/constants/pricing";
 import { createInMemoryPrisma, type InMemoryPrisma } from "../helpers/in-memory-prisma";
 
+const syncSponsorOrderFromCashfreeMock = vi.fn();
+
 vi.mock("@/lib/cashfree/sync-sponsor-order", () => ({
-  syncSponsorOrderFromCashfree: vi.fn().mockResolvedValue(false),
+  syncSponsorOrderFromCashfree: syncSponsorOrderFromCashfreeMock,
 }));
 
 const ASHA = "550e8400-e29b-41d4-a716-446655440001";
@@ -20,6 +22,7 @@ const loadCartService = () => import("@/lib/sponsorship/cart");
 describe("sponsorship cart service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    syncSponsorOrderFromCashfreeMock.mockResolvedValue(false);
     delete process.env.SPONSORSHIP_RESERVATION_MINUTES;
     db = createInMemoryPrisma();
     db.seedLearner({ id: ASHA, name: "Asha", standard: "4" });
@@ -410,8 +413,34 @@ describe("sponsorship cart service", () => {
 
       await refreshCartPaymentState(db.prisma, cart.id);
 
+      expect(syncSponsorOrderFromCashfreeMock).toHaveBeenCalledWith(db.prisma, "VPC_1_abc");
       expect(cart).toMatchObject({ status: "DRAFT", paymentSessionId: null });
       expect(hold.status).toBe("EXPIRED");
+    });
+
+    it("keeps an abandoned attempt that Cashfree reports as paid", async () => {
+      const { refreshCartPaymentState } = await loadCartService();
+      const cart = db.seedCart({
+        status: "PENDING_PAYMENT",
+        orderId: "VPC_1_abc",
+        checkoutStartedAt: minutesAgo(5),
+      });
+      const hold = db.seedOrder({
+        orderId: "VPC_1_abc-1",
+        paymentOrderId: "VPC_1_abc",
+        learnerId: ASHA,
+        status: "EXPIRED",
+      });
+      syncSponsorOrderFromCashfreeMock.mockImplementation(async () => {
+        hold.status = "SUCCESS";
+        cart.status = "PAID";
+        return true;
+      });
+
+      await refreshCartPaymentState(db.prisma, cart.id);
+
+      expect(cart.status).toBe("PAID");
+      expect(hold.status).toBe("SUCCESS");
     });
 
     it("unlocks a cart whose attempt never reserved a learner", async () => {
@@ -438,6 +467,7 @@ describe("sponsorship cart service", () => {
       await refreshCartPaymentState(db.prisma, cart.id);
 
       expect(cart.status).toBe("PENDING_PAYMENT");
+      expect(syncSponsorOrderFromCashfreeMock).not.toHaveBeenCalled();
     });
 
     it("keeps the lock while any learner hold is still active", async () => {

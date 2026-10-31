@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "@/generated/prisma";
 import { SponsorOrderStatus, SponsorshipCartStatus } from "@/generated/prisma";
+import { syncSponsorOrderFromCashfree } from "@/lib/cashfree/sync-sponsor-order";
 import type { CreateCartInput, UpdateCartInput } from "@/lib/validation/sponsorship-cart";
 import {
   CART_FULL_MESSAGE,
@@ -163,8 +164,9 @@ export const releaseCheckoutAttempt = async (
 
 /**
  * A donor who closes the payment page leaves the cart in PENDING_PAYMENT. Once the attempt has
- * outlived the reservation window and none of its learner holds are active, the cart is
- * unlocked so it can be edited or checked out again.
+ * outlived the reservation window and none of its learner holds are active, it is reconciled
+ * with Cashfree and, unless that settled it, the cart is unlocked so it can be edited or
+ * checked out again.
  */
 export const refreshCartPaymentState = async (
   prisma: PrismaClient,
@@ -197,6 +199,9 @@ export const refreshCartPaymentState = async (
   if (activeHolds > 0) {
     return;
   }
+
+  // The donor may have paid (or failed) without the webhook reaching us yet.
+  await syncSponsorOrderFromCashfree(prisma, cart.orderId);
 
   await releaseCheckoutAttempt(prisma, cartId, cart.orderId, SponsorOrderStatus.EXPIRED);
 };
