@@ -1,7 +1,16 @@
 import type { PrismaClient } from "@/generated/prisma";
 import { SponsorOrderStatus } from "@/generated/prisma";
 import { getReservationCutoff } from "./reservation";
-import { isLearnerSponsored } from "./availability";
+import { isLearnerSponsored, type SponsorshipState } from "./availability";
+
+export type LearnerUnavailableReason = "not_found" | "already_sponsored" | "pending_order";
+
+export const LEARNER_UNAVAILABLE_MESSAGES: Record<LearnerUnavailableReason, string> = {
+  not_found: "Learner not found",
+  already_sponsored: "This learner is already sponsored",
+  pending_order:
+    "Someone is checking out for this learner right now. Please try again in a minute.",
+};
 
 export type LearnerAvailabilityResult =
   | {
@@ -10,9 +19,13 @@ export type LearnerAvailabilityResult =
     }
   | {
       available: false;
-      reason: "not_found" | "already_sponsored" | "pending_order";
+      reason: LearnerUnavailableReason;
       message: string;
     };
+
+export type LearnerAvailabilityStatus =
+  | { available: true }
+  | { available: false; reason: Exclude<LearnerUnavailableReason, "not_found">; message: string };
 
 export const checkLearnerAvailableForSponsorship = async (
   prisma: PrismaClient,
@@ -34,7 +47,7 @@ export const checkLearnerAvailableForSponsorship = async (
     return {
       available: false,
       reason: "not_found",
-      message: "Learner not found",
+      message: LEARNER_UNAVAILABLE_MESSAGES.not_found,
     };
   }
 
@@ -42,7 +55,7 @@ export const checkLearnerAvailableForSponsorship = async (
     return {
       available: false,
       reason: "already_sponsored",
-      message: "This learner is already sponsored",
+      message: LEARNER_UNAVAILABLE_MESSAGES.already_sponsored,
     };
   }
 
@@ -59,7 +72,7 @@ export const checkLearnerAvailableForSponsorship = async (
     return {
       available: false,
       reason: "pending_order",
-      message: "Someone is checking out for this learner right now. Please try again in a minute.",
+      message: LEARNER_UNAVAILABLE_MESSAGES.pending_order,
     };
   }
 
@@ -72,4 +85,58 @@ export const checkLearnerAvailableForSponsorship = async (
       imageUrl: learner.imageUrl,
     },
   };
+};
+
+/**
+ * Availability for many already-loaded learners with a single reservation lookup, so a cart
+ * can report every learner that became unavailable instead of failing on the first one.
+ */
+export const getLearnersAvailability = async (
+  prisma: PrismaClient,
+  learners: Array<{ id: string } & SponsorshipState>,
+  now: Date = new Date(),
+): Promise<Map<string, LearnerAvailabilityStatus>> => {
+  const availability = new Map<string, LearnerAvailabilityStatus>();
+  const unsponsoredIds: string[] = [];
+
+  for (const learner of learners) {
+    if (isLearnerSponsored(learner, now)) {
+      availability.set(learner.id, {
+        available: false,
+        reason: "already_sponsored",
+        message: LEARNER_UNAVAILABLE_MESSAGES.already_sponsored,
+      });
+    } else {
+      unsponsoredIds.push(learner.id);
+    }
+  }
+
+  if (unsponsoredIds.length === 0) {
+    return availability;
+  }
+
+  const reservations = await prisma.sponsorOrder.findMany({
+    where: {
+      learnerId: { in: unsponsoredIds },
+      status: SponsorOrderStatus.PENDING,
+      createdAt: { gte: getReservationCutoff(now) },
+    },
+    select: { learnerId: true },
+  });
+  const reservedIds = new Set(reservations.map((reservation) => reservation.learnerId));
+
+  for (const learnerId of unsponsoredIds) {
+    availability.set(
+      learnerId,
+      reservedIds.has(learnerId)
+        ? {
+            available: false,
+            reason: "pending_order",
+            message: LEARNER_UNAVAILABLE_MESSAGES.pending_order,
+          }
+        : { available: true },
+    );
+  }
+
+  return availability;
 };
