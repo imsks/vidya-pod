@@ -3,11 +3,20 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { describeChildren, formatChildCount } from "./cart-format";
 import { SponsorHeader } from "./sponsor-header";
 import { SponsorshipShareCard } from "./sponsorship-share-card";
 import type { SponsorOrderStatusResponse } from "./types";
 
 const POLL_INTERVAL_MS = 3000;
+
+const formatSupportedUntil = (value: string) =>
+  new Date(value).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
 
 export const SponsorThankYouPage = () => {
   const searchParams = useSearchParams();
@@ -94,6 +103,7 @@ export const SponsorThankYouPage = () => {
   const isSuccess = orderStatus?.status === "SUCCESS";
   const isFailed = orderStatus?.status === "FAILED";
   const isPending = !isSuccess && !isFailed;
+  const cartLearners = orderStatus?.learners ?? null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -143,12 +153,7 @@ export const SponsorThankYouPage = () => {
                   <p className="mt-2 text-sm text-muted-foreground">
                     Supported until{" "}
                     <strong className="font-semibold text-foreground">
-                      {new Date(orderStatus.sponsored_until).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        timeZone: "Asia/Kolkata",
-                      })}
+                      {formatSupportedUntil(orderStatus.sponsored_until)}
                     </strong>
                     .
                   </p>
@@ -162,10 +167,48 @@ export const SponsorThankYouPage = () => {
               </>
             )}
 
+            {isSuccess && cartLearners && cartLearners.length > 0 && (
+              <>
+                <p className="mt-3 text-muted-foreground">
+                  You&apos;re now sponsoring the education of{" "}
+                  <strong className="font-semibold text-primary">
+                    {formatChildCount(cartLearners.length)}
+                  </strong>{" "}
+                  with one payment.
+                </p>
+                <ul className="mx-auto mt-6 max-w-md space-y-2 text-left">
+                  {cartLearners.map((learner, index) => (
+                    <li
+                      key={`${learner.name}-${index}`}
+                      className="flex flex-wrap items-baseline justify-between gap-x-4 rounded-xl border border-border bg-card px-4 py-3"
+                    >
+                      <span>
+                        <strong className="font-semibold">{learner.name}</strong>
+                        <span className="text-sm text-muted-foreground">
+                          {" "}
+                          · Grade {learner.standard}
+                        </span>
+                      </span>
+                      {learner.sponsored_until && (
+                        <span className="text-xs text-muted-foreground">
+                          Supported until {formatSupportedUntil(learner.sponsored_until)}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <SponsorshipShareCard
+                  learnerName={describeChildren(cartLearners.map((learner) => learner.name))}
+                  plan={orderStatus.plan}
+                  amount={orderStatus.amount}
+                />
+              </>
+            )}
+
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               {isFailed && (
                 <Link
-                  href="/sponsor"
+                  href={cartLearners ? "/sponsor/cart" : "/sponsor"}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-hero px-6 py-3 font-semibold text-primary-foreground shadow-glow transition-all hover:shadow-lift"
                 >
                   Try again →

@@ -9,7 +9,12 @@ import {
   canAddLearnerToCart,
   computeCartTotals,
 } from "./cart-totals";
-import type { CartResponse, UnavailableCartLearner } from "./cart-types";
+import {
+  CART_NOT_FOUND_MESSAGE,
+  CART_PAID_MESSAGE,
+  type CartResponse,
+  type UnavailableCartLearner,
+} from "./cart-types";
 import { getReservationCutoff } from "./reservation";
 import {
   LEARNER_UNAVAILABLE_MESSAGES,
@@ -27,11 +32,9 @@ export type CartServiceError = {
 
 export type CartServiceResult<T> = { ok: true; data: T } | CartServiceError;
 
-export const CART_NOT_FOUND_MESSAGE = "Cart not found";
+export { CART_NOT_FOUND_MESSAGE, CART_PAID_MESSAGE };
 export const CART_IN_PROGRESS_MESSAGE =
   "A payment is already in progress for this cart. Please wait a minute and try again.";
-export const CART_PAID_MESSAGE =
-  "This cart has already been paid for. Start a new cart to sponsor more learners.";
 export const CART_DUPLICATE_MESSAGE = "This learner is already in your cart";
 export const LEARNERS_UNAVAILABLE_MESSAGE =
   "Some learners are no longer available. Remove them to continue.";

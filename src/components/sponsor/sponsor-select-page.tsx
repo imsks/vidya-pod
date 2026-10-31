@@ -1,9 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChildCard } from "./child-card";
+import { CART_FULL_MESSAGE, MAX_CART_LEARNERS } from "@/lib/sponsorship/cart-totals";
+import { CartSummaryBar } from "./cart-summary-bar";
+import { ChildCard, type CartToggle } from "./child-card";
 import { SponsorHeader } from "./sponsor-header";
 import type { AllLearnersResponse, LearnerStatusFilter, LearnerWithStatus } from "./types";
+import { useSponsorshipCart } from "./use-sponsorship-cart";
+
+const CART_LOCKED_REASON = "Your cart is locked while its payment is open.";
 
 const PAGE_LIMIT = 12;
 
@@ -44,6 +49,25 @@ export const SponsorSelectPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const sponsorshipCart = useSponsorshipCart();
+  const { cart } = sponsorshipCart;
+
+  const cartToggleFor = (learner: LearnerWithStatus): CartToggle => {
+    const inCart = sponsorshipCart.isInCart(learner.id);
+    const isFull = (cart?.items.length ?? 0) >= (cart?.limits.max_learners ?? MAX_CART_LEARNERS);
+    const isLocked = Boolean(cart && !cart.can_edit);
+
+    return {
+      inCart,
+      pending: sponsorshipCart.isPending(learner.id),
+      // A locked cart blocks every change; a full cart only blocks adding more children.
+      disabledReason: isLocked ? CART_LOCKED_REASON : isFull && !inCart ? CART_FULL_MESSAGE : null,
+      onToggle: () =>
+        void (inCart
+          ? sponsorshipCart.removeLearner(learner.id)
+          : sponsorshipCart.addLearner(learner.id)),
+    };
+  };
 
   const fetchLearners = useCallback(
     async (status: LearnerStatusFilter, pageNum: number, append: boolean) => {
@@ -130,7 +154,11 @@ export const SponsorSelectPage = () => {
       <>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {learners.map((learner) => (
-            <ChildCard key={learner.id} learner={learner} />
+            <ChildCard
+              key={learner.id}
+              learner={learner}
+              cartToggle={learner.is_sponsored ? undefined : cartToggleFor(learner)}
+            />
           ))}
         </div>
 
@@ -154,7 +182,7 @@ export const SponsorSelectPage = () => {
     <div className="min-h-screen bg-background">
       <SponsorHeader />
 
-      <main className="max-w-7xl mx-auto px-6 py-16">
+      <main className={`max-w-7xl mx-auto px-6 py-16 ${cart?.items.length ? "pb-32" : ""}`}>
         <div className="text-center">
           <div className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Sponsor a Pod
@@ -164,9 +192,26 @@ export const SponsorSelectPage = () => {
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             {counts.sponsored} of {counts.all} children are sponsored. Select one of the children
-            below to begin funding their learning pod.
+            below to begin funding their learning pod, or add several to your cart and sponsor them
+            all with one payment.
           </p>
         </div>
+
+        {sponsorshipCart.error && (
+          <div
+            role="alert"
+            className="mt-8 mx-auto max-w-2xl flex items-start justify-between gap-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
+            <span>{sponsorshipCart.error}</span>
+            <button
+              type="button"
+              onClick={sponsorshipCart.clearError}
+              className="shrink-0 font-semibold underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         <div className="mt-10 flex justify-center">
           <div className="inline-flex flex-wrap justify-center gap-1 rounded-full bg-muted p-1">
@@ -190,6 +235,8 @@ export const SponsorSelectPage = () => {
 
         <div className="mt-12">{renderGrid()}</div>
       </main>
+
+      {cart && <CartSummaryBar cart={cart} />}
     </div>
   );
 };

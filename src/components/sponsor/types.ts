@@ -61,6 +61,12 @@ export interface SponsorOrderStatusResponse {
       name: string;
       standard: string;
     } | null;
+    /** Present when one payment sponsored several children. */
+    learners?: {
+      name: string;
+      standard: string;
+      sponsored_until: string | null;
+    }[];
     sponsored_until: string | null;
     sponsor: {
       name: string;
