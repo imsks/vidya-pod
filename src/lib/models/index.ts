@@ -105,6 +105,7 @@ export interface SponsorshipCart extends BaseEntity {
   checkout_key?: string | null;
   amount?: number | null;
   payment_session_id?: string | null;
+  checkout_started_at?: string | null;
 }
 
 /**

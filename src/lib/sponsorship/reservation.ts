@@ -25,6 +25,9 @@ export type ReservationInput = {
   plan: SponsorPlanType;
   amount: number;
   learnerId: string;
+  /** Set when the learner is one of several paid for by a single cart checkout. */
+  cartId?: string;
+  paymentOrderId?: string;
 };
 
 export type ReservationResult =

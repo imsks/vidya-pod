@@ -127,19 +127,21 @@ enum SponsorshipCartStatus {
 
 /// SponsorshipCarts - A donor's selection of learners paid for with one combined checkout
 model SponsorshipCart {
-  id               String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  status           SponsorshipCartStatus @default(DRAFT)
-  plan             SponsorPlanType       @default(monthly)
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status            SponsorshipCartStatus @default(DRAFT)
+  plan              SponsorPlanType       @default(monthly)
   /// Cashfree order of the latest checkout attempt. Every attempt gets a fresh order id.
-  orderId          String?               @unique @map("order_id")
+  orderId           String?               @unique @map("order_id")
   /// Idempotency key of the latest checkout attempt.
-  checkoutKey      String?               @map("checkout_key")
+  checkoutKey       String?               @map("checkout_key")
   /// Total charged by the latest checkout attempt.
-  amount           Int?
-  paymentSessionId String?               @map("payment_session_id")
-  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz
-  items            SponsorshipCartItem[]
-  orders           SponsorOrder[]
+  amount            Int?
+  paymentSessionId  String?               @map("payment_session_id")
+  /// When the latest checkout attempt claimed the cart; used to detect abandoned attempts.
+  checkoutStartedAt DateTime?             @map("checkout_started_at") @db.Timestamptz
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  items             SponsorshipCartItem[]
+  orders            SponsorOrder[]
 
   @@index([status])
   @@map("sponsorship_carts")
