@@ -11,6 +11,7 @@ import {
   type ProctorInput,
   type TeacherInput,
   type SponsorOrderInput,
+  type SponsorshipCart,
 } from "@/lib/models";
 
 describe("DB Models", () => {
@@ -21,10 +22,12 @@ describe("DB Models", () => {
       expect(DB_TABLES.PROCTORS).toBe("proctors");
       expect(DB_TABLES.TEACHERS).toBe("teachers");
       expect(DB_TABLES.SPONSOR_ORDERS).toBe("sponsor_orders");
+      expect(DB_TABLES.SPONSORSHIP_CARTS).toBe("sponsorship_carts");
+      expect(DB_TABLES.SPONSORSHIP_CART_ITEMS).toBe("sponsorship_cart_items");
     });
 
     it("has correct number of tables", () => {
-      expect(Object.keys(DB_TABLES)).toHaveLength(5);
+      expect(Object.keys(DB_TABLES)).toHaveLength(7);
     });
   });
 
@@ -182,6 +185,35 @@ describe("DB Models", () => {
         };
         expect(order.plan).toBe(plan);
       });
+    });
+  });
+
+  describe("SponsorshipCart type", () => {
+    it("links child sponsor orders to one combined payment", () => {
+      const cart: SponsorshipCart = {
+        id: "550e8400-e29b-41d4-a716-446655440100",
+        status: "PENDING_PAYMENT",
+        plan: "yearly",
+        order_id: "VPC_1234567890_abc123",
+        amount: 7200,
+        created_at: "2024-01-01T00:00:00Z",
+      };
+      const child: SponsorOrder = {
+        id: "550e8400-e29b-41d4-a716-446655440101",
+        order_id: "VPC_1234567890_abc123-1",
+        name: "John Doe",
+        email: "john@example.com",
+        phone: "9999999999",
+        plan: "yearly",
+        amount: 3600,
+        status: "PENDING",
+        cart_id: cart.id,
+        payment_order_id: cart.order_id,
+        created_at: "2024-01-01T00:00:00Z",
+      };
+
+      expect(child.payment_order_id).toBe(cart.order_id);
+      expect(child.cart_id).toBe(cart.id);
     });
   });
 

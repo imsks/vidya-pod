@@ -7,6 +7,8 @@
  * - Proctor: Proctors overseeing learner activities
  * - Teacher: Instructors teaching learners
  * - SponsorOrder: Orders/records of sponsorship transactions
+ * - SponsorshipCart: A donor's selection of learners paid for with one checkout
+ * - SponsorshipCartItem: A learner selected in a sponsorship cart
  */
 
 /**
@@ -83,6 +85,34 @@ export interface SponsorOrder extends BaseEntity {
   payment_session_id?: string | null;
   sponsor_id?: string | null;
   learner_id?: string | null;
+  /** Cashfree order paying for this row when several learners share one checkout */
+  payment_order_id?: string | null;
+  cart_id?: string | null;
+}
+
+/**
+ * Sponsorship cart status types
+ */
+export type SponsorshipCartStatus = "DRAFT" | "PENDING_PAYMENT" | "PAID" | "FAILED";
+
+/**
+ * SponsorshipCart entity - A donor's selection of learners paid for with one checkout
+ */
+export interface SponsorshipCart extends BaseEntity {
+  status: SponsorshipCartStatus;
+  plan: SponsorPlanType;
+  order_id?: string | null;
+  checkout_key?: string | null;
+  amount?: number | null;
+  payment_session_id?: string | null;
+}
+
+/**
+ * SponsorshipCartItem entity - A learner selected in a sponsorship cart
+ */
+export interface SponsorshipCartItem extends BaseEntity {
+  cart_id: string;
+  learner_id: string;
 }
 
 /**
@@ -112,6 +142,8 @@ export const DB_TABLES = {
   PROCTORS: "proctors",
   TEACHERS: "teachers",
   SPONSOR_ORDERS: "sponsor_orders",
+  SPONSORSHIP_CARTS: "sponsorship_carts",
+  SPONSORSHIP_CART_ITEMS: "sponsorship_cart_items",
 } as const;
 
 export type DbTableName = (typeof DB_TABLES)[keyof typeof DB_TABLES];

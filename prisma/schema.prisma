@@ -31,17 +31,18 @@ model Sponsor {
 
 /// Learners - Students/learners using the platform
 model Learner {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  phone     String?
-  standard  String
-  imageUrl  String?  @map("image_url")
-  sponsorId String?  @map("sponsor_id") @db.Uuid
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  phone             String?
+  standard          String
+  imageUrl          String?               @map("image_url")
+  sponsorId         String?               @map("sponsor_id") @db.Uuid
   /// End of the paid sponsorship period. Null means the sponsorship never lapses.
-  sponsorshipEndsAt DateTime?      @map("sponsorship_ends_at") @db.Timestamptz
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  sponsor           Sponsor?       @relation(fields: [sponsorId], references: [id])
+  sponsorshipEndsAt DateTime?             @map("sponsorship_ends_at") @db.Timestamptz
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  sponsor           Sponsor?              @relation(fields: [sponsorId], references: [id])
   orders            SponsorOrder[]
+  cartItems         SponsorshipCartItem[]
 
   @@index([sponsorId])
   @@index([sponsorId, sponsorshipEndsAt])
@@ -100,12 +101,60 @@ model SponsorOrder {
   shareSlug        String?            @unique @map("share_slug")
   sponsorId        String?            @map("sponsor_id") @db.Uuid
   learnerId        String?            @map("learner_id") @db.Uuid
+  /// Cashfree order that pays for this row when several learners share one checkout.
+  paymentOrderId   String?            @map("payment_order_id")
+  cartId           String?            @map("cart_id") @db.Uuid
   createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz
   sponsor          Sponsor?           @relation(fields: [sponsorId], references: [id])
   learner          Learner?           @relation(fields: [learnerId], references: [id])
+  cart             SponsorshipCart?   @relation(fields: [cartId], references: [id])
 
   @@index([sponsorId])
   @@index([learnerId])
   @@index([status])
+  @@index([paymentOrderId])
+  @@index([cartId])
   @@map("sponsor_orders")
+}
+
+/// Sponsorship cart status enum
+enum SponsorshipCartStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  FAILED
+}
+
+/// SponsorshipCarts - A donor's selection of learners paid for with one combined checkout
+model SponsorshipCart {
+  id               String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status           SponsorshipCartStatus @default(DRAFT)
+  plan             SponsorPlanType       @default(monthly)
+  /// Cashfree order of the latest checkout attempt. Every attempt gets a fresh order id.
+  orderId          String?               @unique @map("order_id")
+  /// Idempotency key of the latest checkout attempt.
+  checkoutKey      String?               @map("checkout_key")
+  /// Total charged by the latest checkout attempt.
+  amount           Int?
+  paymentSessionId String?               @map("payment_session_id")
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  items            SponsorshipCartItem[]
+  orders           SponsorOrder[]
+
+  @@index([status])
+  @@map("sponsorship_carts")
+}
+
+/// SponsorshipCartItems - Learners selected in a cart; a learner appears at most once per cart
+model SponsorshipCartItem {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cartId    String          @map("cart_id") @db.Uuid
+  learnerId String          @map("learner_id") @db.Uuid
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  cart      SponsorshipCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  learner   Learner         @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, learnerId])
+  @@index([learnerId])
+  @@map("sponsorship_cart_items")
 }
