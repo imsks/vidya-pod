@@ -57,6 +57,7 @@ describe("POST /api/sponsor", () => {
       standard: "8",
       imageUrl: null,
       sponsorId: null,
+      sponsorshipEndsAt: null,
     });
     sponsorOrderFindFirstMock.mockResolvedValue(null);
     process.env.CASHFREE_BASE_URL = "https://sandbox.cashfree.com";
@@ -116,6 +117,7 @@ describe("POST /api/sponsor", () => {
       standard: "8",
       imageUrl: null,
       sponsorId: "550e8400-e29b-41d4-a716-446655440099",
+      sponsorshipEndsAt: new Date(Date.now() + 86_400_000),
     });
 
     const { POST } = await import("../../app/api/sponsor/route");

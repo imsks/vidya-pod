@@ -3,6 +3,8 @@ import { getAdminSecretFromRequest, validateAdminSecret } from "@/lib/admin-auth
 import { mapLearner, mapProctor, mapTeacher } from "@/lib/admin/record-mappers";
 import { getPrisma } from "@/lib/prisma";
 import { isPhotoUploadError, isPhotoValidationError, uploadEntityPhoto } from "@/lib/storage";
+import { isLearnerSponsored } from "@/lib/sponsorship/availability";
+import { fromIstDateInput } from "@/lib/sponsorship/period";
 import {
   isAdminEditableEntity,
   parseAdminEntityUpdateBody,
@@ -91,6 +93,14 @@ export async function PATCH(request: Request, context: RouteContext) {
         return NextResponse.json({ error: "Learner not found" }, { status: 404 });
       }
 
+      const sponsorshipEndsAt = parsed.data.sponsorship_ends_at
+        ? fromIstDateInput(parsed.data.sponsorship_ends_at)
+        : null;
+
+      if (parsed.data.sponsorship_ends_at && !sponsorshipEndsAt) {
+        return NextResponse.json({ error: "Invalid sponsorship end date" }, { status: 400 });
+      }
+
       const learner = await prisma.learner.update({
         where: { id },
         data: {
@@ -98,6 +108,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           phone: parsed.data.phone?.trim() || null,
           standard: parsed.data.standard,
           imageUrl,
+          sponsorshipEndsAt,
         },
       });
 
@@ -162,15 +173,15 @@ export async function DELETE(request: Request, context: RouteContext) {
     if (entity === "learner") {
       const learner = await prisma.learner.findUnique({
         where: { id },
-        select: { sponsorId: true },
+        select: { sponsorId: true, sponsorshipEndsAt: true },
       });
 
       if (!learner) {
         return NextResponse.json({ error: "Learner not found" }, { status: 404 });
       }
 
-      // Removing a sponsored learner would orphan a paid sponsorship.
-      if (learner.sponsorId) {
+      // Removing an actively sponsored learner would orphan a paid sponsorship.
+      if (isLearnerSponsored(learner)) {
         return NextResponse.json(
           { error: "This learner is sponsored and cannot be deleted." },
           { status: 409 },

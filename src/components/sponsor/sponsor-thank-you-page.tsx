@@ -139,6 +139,20 @@ export const SponsorThankYouPage = () => {
                   <strong className="font-semibold text-primary">{orderStatus.learner.name}</strong>
                   , a Grade {orderStatus.learner.standard} student.
                 </p>
+                {orderStatus.sponsored_until && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Supported until{" "}
+                    <strong className="font-semibold text-foreground">
+                      {new Date(orderStatus.sponsored_until).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        timeZone: "Asia/Kolkata",
+                      })}
+                    </strong>
+                    .
+                  </p>
+                )}
                 <SponsorshipShareCard
                   learnerName={orderStatus.learner.name}
                   learnerStandard={orderStatus.learner.standard}

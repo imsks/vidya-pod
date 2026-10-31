@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS learners (
   standard TEXT NOT NULL,
   image_url TEXT,
   sponsor_id UUID REFERENCES sponsors(id),
+  sponsorship_ends_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -103,6 +104,7 @@ CREATE POLICY "Allow public update" ON sponsor_orders FOR UPDATE USING (true);
 -- ============================================
 
 CREATE INDEX IF NOT EXISTS idx_learners_sponsor_id ON learners(sponsor_id);
+CREATE INDEX IF NOT EXISTS idx_learners_sponsor_id_sponsorship_ends_at ON learners(sponsor_id, sponsorship_ends_at);
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_sponsor_id ON sponsor_orders(sponsor_id);
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_learner_id ON sponsor_orders(learner_id);
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_status ON sponsor_orders(status);
@@ -119,3 +121,6 @@ ALTER TABLE sponsor_orders ADD COLUMN IF NOT EXISTS image_url TEXT;
 -- Add public share slug column for shareable sponsorship URLs
 ALTER TABLE sponsor_orders ADD COLUMN IF NOT EXISTS share_slug TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS sponsor_orders_share_slug_key ON sponsor_orders(share_slug);
+
+-- Add sponsorship expiry so learners return to the pool when a paid period ends
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS sponsorship_ends_at TIMESTAMPTZ;

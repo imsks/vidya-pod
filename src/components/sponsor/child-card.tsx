@@ -6,6 +6,14 @@ interface ChildCardProps {
   learner: LearnerWithStatus;
 }
 
+const formatEndDate = (value: string) =>
+  new Date(value).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+
 const SponsoredCard = ({ learner }: ChildCardProps) => (
   <div className="p-6 rounded-2xl bg-card border border-accent/30 shadow-soft">
     <div className="relative w-20 h-20 mx-auto rounded-full overflow-hidden bg-gradient-warm shadow-soft">
@@ -26,6 +34,11 @@ const SponsoredCard = ({ learner }: ChildCardProps) => (
     <p className="mt-2 text-xs text-center text-muted-foreground">
       Their pod is fully funded. Thank you! 🎉
     </p>
+    {learner.sponsorship_ends_at && (
+      <p className="mt-1 text-xs text-center text-muted-foreground">
+        Sponsored till {formatEndDate(learner.sponsorship_ends_at)}
+      </p>
+    )}
   </div>
 );
 

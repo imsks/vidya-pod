@@ -26,6 +26,7 @@ describe("GET /api/learner/[learnerId]", () => {
       standard: "8",
       imageUrl: "https://example.com/photo.jpg",
       sponsorId: null,
+      sponsorshipEndsAt: null,
     });
     sponsorOrderFindFirstMock.mockResolvedValue(null);
   });
@@ -65,6 +66,7 @@ describe("GET /api/learner/[learnerId]", () => {
       standard: "8",
       imageUrl: null,
       sponsorId: "550e8400-e29b-41d4-a716-446655440099",
+      sponsorshipEndsAt: new Date(Date.now() + 86_400_000),
     });
 
     const { GET } = await import("../../app/api/learner/[learnerId]/route");
@@ -84,5 +86,23 @@ describe("GET /api/learner/[learnerId]", () => {
     });
 
     expect(response.status).toBe(409);
+  });
+
+  it("allows sponsoring a learner whose sponsorship has lapsed", async () => {
+    learnerFindUniqueMock.mockResolvedValue({
+      id: LEARNER_ID,
+      name: "Asha Kumar",
+      standard: "8",
+      imageUrl: null,
+      sponsorId: "550e8400-e29b-41d4-a716-446655440099",
+      sponsorshipEndsAt: new Date(Date.now() - 86_400_000),
+    });
+
+    const { GET } = await import("../../app/api/learner/[learnerId]/route");
+    const response = await GET(new Request("http://localhost/api/learner/test"), {
+      params: Promise.resolve({ learnerId: LEARNER_ID }),
+    });
+
+    expect(response.status).toBe(200);
   });
 });

@@ -15,6 +15,7 @@ const orderSelect = {
     select: {
       name: true,
       standard: true,
+      sponsorshipEndsAt: true,
     },
   },
   sponsor: {
@@ -61,6 +62,7 @@ export async function GET(_request: Request, context: RouteContext) {
               standard: order.learner.standard,
             }
           : null,
+        sponsored_until: order.learner?.sponsorshipEndsAt?.toISOString() ?? null,
         sponsor: order.sponsor
           ? {
               name: order.sponsor.name,

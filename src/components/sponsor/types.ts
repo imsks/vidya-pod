@@ -10,6 +10,7 @@ export type LearnerStatusFilter = "all" | "available" | "sponsored";
 
 export interface LearnerWithStatus extends ReadyToSponsorLearner {
   is_sponsored: boolean;
+  sponsorship_ends_at: string | null;
 }
 
 export interface AllLearnersResponse {
@@ -60,6 +61,7 @@ export interface SponsorOrderStatusResponse {
       name: string;
       standard: string;
     } | null;
+    sponsored_until: string | null;
     sponsor: {
       name: string;
       email: string;

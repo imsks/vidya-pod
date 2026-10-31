@@ -74,7 +74,9 @@ describe("GET /api/learner/ready-to-sponsor", () => {
     });
 
     expect(learnerFindManyMock).toHaveBeenCalledWith({
-      where: { sponsorId: null },
+      where: {
+        OR: [{ sponsorId: null }, { sponsorshipEndsAt: { lt: expect.any(Date) } }],
+      },
       select: {
         id: true,
         name: true,
@@ -88,7 +90,9 @@ describe("GET /api/learner/ready-to-sponsor", () => {
     });
 
     expect(learnerCountMock).toHaveBeenCalledWith({
-      where: { sponsorId: null },
+      where: {
+        OR: [{ sponsorId: null }, { sponsorshipEndsAt: { lt: expect.any(Date) } }],
+      },
     });
   });
 
@@ -241,7 +245,7 @@ describe("GET /api/learner/ready-to-sponsor", () => {
     expect(data.error).toBe("Database connection failed");
   });
 
-  it("excludes learners with sponsors from results", async () => {
+  it("excludes learners with active sponsorships from results", async () => {
     const { GET } = await import("../../app/api/learner/ready-to-sponsor/route");
     const request = new Request("http://localhost/api/learner/ready-to-sponsor");
     Object.defineProperty(request, "nextUrl", {
@@ -252,7 +256,9 @@ describe("GET /api/learner/ready-to-sponsor", () => {
 
     expect(learnerFindManyMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { sponsorId: null },
+        where: {
+          OR: [{ sponsorId: null }, { sponsorshipEndsAt: { lt: expect.any(Date) } }],
+        },
       }),
     );
   });

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { AdminEditableEntity } from "@/lib/validation/admin-entity-update";
+import { toIstDateInput } from "@/lib/sponsorship/period";
 import type { LearnerRecord, ProctorRecord, TeacherRecord } from "@/types/admin";
 
 export type EditableRecord = LearnerRecord | TeacherRecord | ProctorRecord;
@@ -38,6 +39,10 @@ export function AdminEntityEditDialog({
   const [phone, setPhone] = useState(record.phone ?? "");
   const [standard, setStandard] = useState((record as LearnerRecord).standard ?? "");
   const [qualification, setQualification] = useState((record as TeacherRecord).qualification ?? "");
+  const [sponsorshipEndsAt, setSponsorshipEndsAt] = useState(() => {
+    const stored = (record as LearnerRecord).sponsorship_ends_at;
+    return stored ? toIstDateInput(new Date(stored)) : "";
+  });
   const [imageUrl, setImageUrl] = useState(record.image_url ?? "");
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoFilename, setPhotoFilename] = useState<string | null>(null);
@@ -91,7 +96,7 @@ export function AdminEntityEditDialog({
         name,
         phone,
         image_url: imageUrl.trim(),
-        ...(isLearner ? { standard } : { qualification }),
+        ...(isLearner ? { standard, sponsorship_ends_at: sponsorshipEndsAt } : { qualification }),
         ...(photoData && photoFilename
           ? { photo_data: photoData, photo_filename: photoFilename }
           : {}),
@@ -180,6 +185,24 @@ export function AdminEntityEditDialog({
               onChange={(e) => setQualification(e.target.value)}
               className={inputClass}
             />
+          </div>
+        )}
+
+        {isLearner && (
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Sponsored till <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <input
+              type="date"
+              value={sponsorshipEndsAt}
+              onChange={(e) => setSponsorshipEndsAt(e.target.value)}
+              className={inputClass}
+            />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Leave blank so the sponsorship never lapses. After this date the learner returns to
+              the adoption pool.
+            </p>
           </div>
         )}
 

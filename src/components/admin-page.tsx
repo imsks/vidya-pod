@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { clearAdminSessionPin, setAdminSessionPin } from "@/lib/admin-session";
+import { isLearnerSponsored } from "@/lib/sponsorship/availability";
 import type { AdminEditableEntity } from "@/lib/validation/admin-entity-update";
 import type {
   AdminDashboardData,
@@ -19,6 +20,14 @@ type Tab = "teachers" | "learners" | "proctors" | "sponsors" | "sponsor-orders";
 type ActionTarget = { entity: AdminEditableEntity; record: EditableRecord };
 
 const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateString("en-IN") : "—");
+
+const sponsorshipStatus = (learner: LearnerRecord) => {
+  if (!learner.sponsor_id) return "No";
+  const endsAt = learner.sponsorship_ends_at ? new Date(learner.sponsorship_ends_at) : null;
+  return isLearnerSponsored({ sponsorId: learner.sponsor_id, sponsorshipEndsAt: endsAt })
+    ? "Yes"
+    : "Lapsed";
+};
 
 const ADD_LINKS: { entity: AdminEditableEntity; label: string; tab: Tab }[] = [
   { entity: "teacher", label: "Teacher", tab: "teachers" },
@@ -317,13 +326,23 @@ export function AdminPage() {
             )}
             {activeTab === "learners" && (
               <DataTable
-                columns={["Image", "Name", "Phone", "Class", "Sponsored", "Registered", "Actions"]}
+                columns={[
+                  "Image",
+                  "Name",
+                  "Phone",
+                  "Class",
+                  "Sponsored",
+                  "Sponsored till",
+                  "Registered",
+                  "Actions",
+                ]}
                 rows={learners.map((l) => [
                   l.image_url || "",
                   l.name,
                   l.phone || "—",
                   `Class ${l.standard ?? "—"}`,
-                  l.sponsor_id ? "Yes" : "No",
+                  sponsorshipStatus(l),
+                  l.sponsorship_ends_at ? formatDate(l.sponsorship_ends_at) : "—",
                   formatDate(l.created_at),
                 ])}
                 imageColumn={0}

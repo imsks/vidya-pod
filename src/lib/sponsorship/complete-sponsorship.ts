@@ -1,6 +1,8 @@
 import type { PrismaClient, SponsorOrder } from "@/generated/prisma";
 import { SponsorOrderStatus } from "@/generated/prisma";
 import { generateShareSlug } from "./share-url";
+import { isLearnerSponsored } from "./availability";
+import { sponsorshipEndFor } from "./period";
 
 export type CompleteSponsorshipResult =
   | { success: true; order: SponsorOrder; alreadyCompleted: boolean }
@@ -28,6 +30,7 @@ export const completeSponsorshipPayment = async (
   }
 
   const updatedOrder = await prisma.$transaction(async (tx) => {
+    const paidAt = new Date();
     let sponsor = await tx.sponsor.findFirst({
       where: { email: order.email },
     });
@@ -54,13 +57,17 @@ export const completeSponsorshipPayment = async (
     if (order.learnerId) {
       const learner = await tx.learner.findUnique({
         where: { id: order.learnerId },
-        select: { sponsorId: true },
+        select: { sponsorId: true, sponsorshipEndsAt: true },
       });
 
-      if (learner && learner.sponsorId === null) {
+      // A lapsed learner is reassigned; an active sponsorship is never overwritten.
+      if (learner && !isLearnerSponsored(learner, paidAt)) {
         await tx.learner.update({
           where: { id: order.learnerId },
-          data: { sponsorId: sponsor.id },
+          data: {
+            sponsorId: sponsor.id,
+            sponsorshipEndsAt: sponsorshipEndFor(order.plan, paidAt),
+          },
         });
       }
     }

@@ -91,3 +91,18 @@ Reset the database: `make stop && docker compose down -v && make up`
 Pre-commit runs `lint-staged` (ESLint `--fix` + Prettier) via Husky.
 
 CI (`.github/workflows/ci.yml`) runs quality checks, then build + E2E against `npm start`.
+
+### One-off scripts
+
+| Command                                                                                 | Description                                                           |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `node scripts/import-learners.mjs --target=local`                                       | Bulk-import learners from `data/learners.json` via the admin API      |
+| `docker compose exec app node scripts/backfill-sponsorship-end-date.mjs --target=local` | Stamp a sponsorship end date on already-sponsored learners (one-time) |
+
+Both read credentials from the env file for the chosen target (`.env.local` → `.env`, or
+`.env.production`) and support `--dry-run`. The backfill defaults to `--cutoff=2026-10-31`
+(end of day IST) and only touches sponsored learners that have no end date, so it is safe to re-run.
+
+The backfill talks to Postgres directly. `.env` points `DATABASE_URL` at the compose host `db`,
+which only resolves inside the compose network — so run it through `docker compose exec app`, or
+create a `.env.local` with a `localhost` `DATABASE_URL` to run it from the host.
