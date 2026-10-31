@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma";
 import { SponsorOrderStatus } from "@/generated/prisma";
 import { getReservationCutoff } from "./reservation";
+import { isLearnerSponsored } from "./availability";
 
 export type LearnerAvailabilityResult =
   | {
@@ -25,6 +26,7 @@ export const checkLearnerAvailableForSponsorship = async (
       standard: true,
       imageUrl: true,
       sponsorId: true,
+      sponsorshipEndsAt: true,
     },
   });
 
@@ -36,7 +38,7 @@ export const checkLearnerAvailableForSponsorship = async (
     };
   }
 
-  if (learner.sponsorId !== null) {
+  if (isLearnerSponsored(learner)) {
     return {
       available: false,
       reason: "already_sponsored",

@@ -14,6 +14,7 @@ export interface LearnerRecord {
   standard?: string;
   image_url?: string | null;
   sponsor_id?: string | null;
+  sponsorship_ends_at?: string | null;
   created_at?: string;
 }
 

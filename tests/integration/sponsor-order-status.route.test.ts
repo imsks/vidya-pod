@@ -27,6 +27,7 @@ describe("GET /api/sponsor/[orderId]", () => {
       learner: {
         name: "Asha Kumar",
         standard: "8",
+        sponsorshipEndsAt: null,
       },
       sponsor: null,
     });
@@ -51,6 +52,7 @@ describe("GET /api/sponsor/[orderId]", () => {
         name: "Asha Kumar",
         standard: "8",
       },
+      sponsored_until: null,
       sponsor: null,
     });
   });
@@ -64,6 +66,7 @@ describe("GET /api/sponsor/[orderId]", () => {
       learner: {
         name: "Ravi Sharma",
         standard: "10",
+        sponsorshipEndsAt: new Date("2027-11-05T10:00:00.000Z"),
       },
       sponsor: {
         name: "Priya Patel",
@@ -88,6 +91,7 @@ describe("GET /api/sponsor/[orderId]", () => {
         name: "Ravi Sharma",
         standard: "10",
       },
+      sponsored_until: "2027-11-05T10:00:00.000Z",
       sponsor: {
         name: "Priya Patel",
         email: "priya@example.com",

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
+import { availableLearnerWhere } from "@/lib/sponsorship/availability";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -21,13 +22,12 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     const prisma = getPrisma();
+    const where = availableLearnerWhere();
 
-    // Query learners ready to be sponsored (no sponsor assigned)
+    // Query learners ready to be sponsored (unsponsored or lapsed)
     const [learners, totalCount] = await Promise.all([
       prisma.learner.findMany({
-        where: {
-          sponsorId: null,
-        },
+        where,
         select: {
           id: true,
           name: true,
@@ -41,11 +41,7 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.learner.count({
-        where: {
-          sponsorId: null,
-        },
-      }),
+      prisma.learner.count({ where }),
     ]);
 
     const totalPages = Math.ceil(totalCount / limit);

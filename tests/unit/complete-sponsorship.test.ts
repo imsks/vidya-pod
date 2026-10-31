@@ -8,6 +8,47 @@ import {
   isPaymentSuccessWebhook,
 } from "@/lib/sponsorship/complete-sponsorship";
 
+type CompletionPrismaOptions = {
+  order?: Record<string, unknown>;
+  learner: { sponsorId: string | null; sponsorshipEndsAt: Date | null };
+  learnerUpdate: ReturnType<typeof vi.fn>;
+};
+
+const buildCompletionPrisma = ({ order, learner, learnerUpdate }: CompletionPrismaOptions) => {
+  const baseOrder = {
+    id: "order-1",
+    orderId: "VP_123",
+    status: SponsorOrderStatus.PENDING,
+    name: "Donor",
+    email: "donor@example.com",
+    phone: "9999999999",
+    plan: "monthly",
+    learnerId: "learner-1",
+    ...order,
+  };
+
+  return {
+    sponsorOrder: {
+      findUnique: vi.fn().mockResolvedValue(baseOrder),
+    },
+    $transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
+      callback({
+        sponsor: {
+          findFirst: vi.fn().mockResolvedValue({ id: "sponsor-1" }),
+          create: vi.fn().mockResolvedValue({ id: "sponsor-1" }),
+        },
+        sponsorOrder: {
+          update: vi.fn().mockResolvedValue({ ...baseOrder, status: SponsorOrderStatus.SUCCESS }),
+        },
+        learner: {
+          findUnique: vi.fn().mockResolvedValue(learner),
+          update: learnerUpdate,
+        },
+      }),
+    ),
+  };
+};
+
 describe("completeSponsorshipPayment", () => {
   it("returns order_not_found when order does not exist", async () => {
     const prisma = {
@@ -41,6 +82,9 @@ describe("completeSponsorshipPayment", () => {
   });
 
   it("creates sponsor and assigns learner on pending order", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-05T10:00:00.000Z"));
+
     const order = {
       id: "order-1",
       orderId: "VP_123",
@@ -48,6 +92,7 @@ describe("completeSponsorshipPayment", () => {
       name: "Donor",
       email: "donor@example.com",
       phone: "9999999999",
+      plan: "monthly",
       learnerId: "learner-1",
     };
 
@@ -56,7 +101,9 @@ describe("completeSponsorshipPayment", () => {
     const sponsorCreate = vi.fn().mockResolvedValue({ id: "sponsor-1" });
     const sponsorFindFirst = vi.fn().mockResolvedValue(null);
     const sponsorOrderUpdate = vi.fn().mockResolvedValue(updatedOrder);
-    const learnerFindUnique = vi.fn().mockResolvedValue({ sponsorId: null });
+    const learnerFindUnique = vi
+      .fn()
+      .mockResolvedValue({ sponsorId: null, sponsorshipEndsAt: null });
     const learnerUpdate = vi.fn().mockResolvedValue({});
 
     const prisma = {
@@ -92,7 +139,10 @@ describe("completeSponsorshipPayment", () => {
     });
     expect(learnerUpdate).toHaveBeenCalledWith({
       where: { id: "learner-1" },
-      data: { sponsorId: "sponsor-1" },
+      data: {
+        sponsorId: "sponsor-1",
+        sponsorshipEndsAt: new Date("2026-12-05T10:00:00.000Z"),
+      },
     });
     expect(sponsorOrderUpdate).toHaveBeenCalledWith({
       where: { id: "order-1" },
@@ -102,6 +152,95 @@ describe("completeSponsorshipPayment", () => {
         shareSlug: expect.stringMatching(/^[A-Za-z0-9_-]{8,64}$/),
       },
     });
+
+    vi.useRealTimers();
+  });
+
+  it("gives yearly orders a twelve month period", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-05T10:00:00.000Z"));
+
+    const learnerUpdate = vi.fn().mockResolvedValue({});
+    const prisma = buildCompletionPrisma({
+      order: { plan: "yearly" },
+      learner: { sponsorId: null, sponsorshipEndsAt: null },
+      learnerUpdate,
+    });
+
+    await completeSponsorshipPayment(prisma as never, "VP_123");
+
+    expect(learnerUpdate).toHaveBeenCalledWith({
+      where: { id: "learner-1" },
+      data: {
+        sponsorId: "sponsor-1",
+        sponsorshipEndsAt: new Date("2027-11-05T10:00:00.000Z"),
+      },
+    });
+
+    vi.useRealTimers();
+  });
+
+  it("reassigns a learner whose sponsorship has lapsed", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-05T10:00:00.000Z"));
+
+    const learnerUpdate = vi.fn().mockResolvedValue({});
+    const prisma = buildCompletionPrisma({
+      learner: {
+        sponsorId: "previous-sponsor",
+        sponsorshipEndsAt: new Date("2026-10-31T18:29:59.999Z"),
+      },
+      learnerUpdate,
+    });
+
+    await completeSponsorshipPayment(prisma as never, "VP_123");
+
+    expect(learnerUpdate).toHaveBeenCalledWith({
+      where: { id: "learner-1" },
+      data: {
+        sponsorId: "sponsor-1",
+        sponsorshipEndsAt: new Date("2026-12-05T10:00:00.000Z"),
+      },
+    });
+
+    vi.useRealTimers();
+  });
+
+  it("does not overwrite an active sponsorship", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-05T10:00:00.000Z"));
+
+    const learnerUpdate = vi.fn().mockResolvedValue({});
+    const prisma = buildCompletionPrisma({
+      learner: {
+        sponsorId: "other-sponsor",
+        sponsorshipEndsAt: new Date("2026-12-31T00:00:00.000Z"),
+      },
+      learnerUpdate,
+    });
+
+    await completeSponsorshipPayment(prisma as never, "VP_123");
+
+    expect(learnerUpdate).not.toHaveBeenCalled();
+
+    vi.useRealTimers();
+  });
+
+  it("never lapses a learner with no end date", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2030-11-05T10:00:00.000Z"));
+
+    const learnerUpdate = vi.fn().mockResolvedValue({});
+    const prisma = buildCompletionPrisma({
+      learner: { sponsorId: "other-sponsor", sponsorshipEndsAt: null },
+      learnerUpdate,
+    });
+
+    await completeSponsorshipPayment(prisma as never, "VP_123");
+
+    expect(learnerUpdate).not.toHaveBeenCalled();
+
+    vi.useRealTimers();
   });
 });
 

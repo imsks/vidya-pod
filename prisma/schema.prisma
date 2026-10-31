@@ -31,17 +31,20 @@ model Sponsor {
 
 /// Learners - Students/learners using the platform
 model Learner {
-  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String
   phone     String?
   standard  String
-  imageUrl  String?        @map("image_url")
-  sponsorId String?        @map("sponsor_id") @db.Uuid
-  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  sponsor   Sponsor?       @relation(fields: [sponsorId], references: [id])
-  orders    SponsorOrder[]
+  imageUrl  String?  @map("image_url")
+  sponsorId String?  @map("sponsor_id") @db.Uuid
+  /// End of the paid sponsorship period. Null means the sponsorship never lapses.
+  sponsorshipEndsAt DateTime?      @map("sponsorship_ends_at") @db.Timestamptz
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  sponsor           Sponsor?       @relation(fields: [sponsorId], references: [id])
+  orders            SponsorOrder[]
 
   @@index([sponsorId])
+  @@index([sponsorId, sponsorshipEndsAt])
   @@map("learners")
 }
 

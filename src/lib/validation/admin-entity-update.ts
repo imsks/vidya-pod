@@ -20,6 +20,14 @@ const learnerUpdateSchema = z.object({
   phone: z.string().trim().optional().nullable(),
   standard: z.string().trim().min(1, "Standard is required"),
   image_url: imageUrlField,
+  // Blank clears the ceiling, which makes the sponsorship permanent.
+  sponsorship_ends_at: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Sponsorship end date must be in YYYY-MM-DD format")
+    .or(z.literal(""))
+    .optional()
+    .nullable(),
 });
 
 const staffUpdateSchema = z.object({

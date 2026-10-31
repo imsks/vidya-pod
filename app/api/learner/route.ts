@@ -3,15 +3,20 @@ import { getPrisma } from "@/lib/prisma";
 import { isPhotoUploadError, isPhotoValidationError, uploadEntityPhoto } from "@/lib/storage";
 import { validateAdminSecret } from "@/lib/admin-auth";
 import { parseLearnerBody } from "@/lib/validation/learner";
+import {
+  availableLearnerWhere,
+  isLearnerSponsored,
+  sponsoredLearnerWhere,
+} from "@/lib/sponsorship/availability";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 100;
 
 const STATUS_FILTERS = {
-  all: {},
-  sponsored: { sponsorId: { not: null } },
-  available: { sponsorId: null },
+  all: () => ({}),
+  sponsored: sponsoredLearnerWhere,
+  available: availableLearnerWhere,
 } as const;
 
 type StatusFilter = keyof typeof STATUS_FILTERS;
@@ -37,7 +42,8 @@ export async function GET(request: NextRequest) {
 
     const page = parsePositiveInt(searchParams.get("page"), DEFAULT_PAGE);
     const limit = Math.min(parsePositiveInt(searchParams.get("limit"), DEFAULT_LIMIT), MAX_LIMIT);
-    const where = STATUS_FILTERS[requestedStatus];
+    const now = new Date();
+    const where = STATUS_FILTERS[requestedStatus](now);
 
     const prisma = getPrisma();
     const [learners, totalCount, sponsoredCount, availableCount] = await Promise.all([
@@ -49,6 +55,7 @@ export async function GET(request: NextRequest) {
           standard: true,
           imageUrl: true,
           sponsorId: true,
+          sponsorshipEndsAt: true,
           createdAt: true,
         },
         orderBy: { createdAt: "desc" },
@@ -56,8 +63,8 @@ export async function GET(request: NextRequest) {
         take: limit,
       }),
       prisma.learner.count({ where }),
-      prisma.learner.count({ where: STATUS_FILTERS.sponsored }),
-      prisma.learner.count({ where: STATUS_FILTERS.available }),
+      prisma.learner.count({ where: sponsoredLearnerWhere(now) }),
+      prisma.learner.count({ where: availableLearnerWhere(now) }),
     ]);
 
     const totalPages = Math.ceil(totalCount / limit);
@@ -69,7 +76,8 @@ export async function GET(request: NextRequest) {
         name: learner.name,
         standard: learner.standard,
         image_url: learner.imageUrl,
-        is_sponsored: learner.sponsorId !== null,
+        is_sponsored: isLearnerSponsored(learner, now),
+        sponsorship_ends_at: learner.sponsorshipEndsAt?.toISOString() ?? null,
         created_at: learner.createdAt.toISOString(),
       })),
       counts: {

@@ -16,6 +16,7 @@ export const mapLearner = (learner: Learner) => ({
   standard: learner.standard,
   image_url: learner.imageUrl,
   sponsor_id: learner.sponsorId,
+  sponsorship_ends_at: learner.sponsorshipEndsAt?.toISOString() ?? null,
   created_at: learner.createdAt.toISOString(),
 });
 
