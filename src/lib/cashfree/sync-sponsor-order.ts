@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma";
+import { SponsorOrderStatus } from "@/generated/prisma";
 import { isCashfreeConfigured } from "@/lib/cashfree/config";
 import {
   fetchCashfreeOrder,
@@ -14,7 +15,7 @@ import {
 } from "@/lib/sponsorship/complete-sponsorship";
 
 /**
- * Reconcile a pending sponsor order against Cashfree when webhooks are unavailable
+ * Reconcile the learner rows of a Cashfree order against Cashfree when webhooks are unavailable
  * (e.g. localhost) or delayed. Returns true when the local order status was updated.
  */
 export const syncSponsorOrderFromCashfree = async (
@@ -25,16 +26,14 @@ export const syncSponsorOrderFromCashfree = async (
     return false;
   }
 
-  const existingOrder = await prisma.sponsorOrder.findUnique({
-    where: { orderId },
-    select: { status: true },
+  const unsettled = await prisma.sponsorOrder.count({
+    where: {
+      paymentOrderId: orderId,
+      status: { in: [SponsorOrderStatus.PENDING, SponsorOrderStatus.EXPIRED] },
+    },
   });
 
-  if (!existingOrder) {
-    return false;
-  }
-
-  if (existingOrder.status !== "PENDING" && existingOrder.status !== "EXPIRED") {
+  if (unsettled === 0) {
     return false;
   }
 

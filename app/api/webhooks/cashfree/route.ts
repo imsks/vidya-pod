@@ -37,7 +37,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
 
-      return NextResponse.json({ success: true, status: result.order.status });
+      return NextResponse.json({ success: true, status: result.status });
     }
 
     if (isPaymentFailedWebhook(payload)) {
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
 
-      return NextResponse.json({ success: true, status: result.order.status });
+      return NextResponse.json({ success: true, status: result.status });
     }
 
     return NextResponse.json({ success: true, message: "Webhook received" });
