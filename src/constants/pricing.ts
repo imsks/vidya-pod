@@ -5,6 +5,9 @@ export const STATIONERY_PER_MONTH = 50;
 export const PROCTOR_PER_MONTH = 50;
 export const MONTHS_PER_YEAR = 12;
 
+/** Most children a donor can sponsor with one payment. */
+export const MAX_LEARNERS_PER_CHECKOUT = 10;
+
 export interface PricingLineItem {
   label: string;
   amount: number;

@@ -36,8 +36,7 @@ export const SponsorPaymentForm = ({ learnerId, learnerName, plan }: SponsorPaym
           email,
           phone,
           plan,
-          amount: total,
-          learner_id: learnerId,
+          learner_ids: [learnerId],
           public_acknowledgement_opt_in: publicAcknowledgementOptIn,
         }),
       });

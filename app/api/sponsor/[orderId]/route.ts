@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { internalError, jsonError } from "@/lib/api/respond";
 import { syncSponsorOrderFromCashfree } from "@/lib/cashfree/sync-sponsor-order";
-import { getSponsorOrderForStatus } from "@/lib/data/sponsor-order";
+import { getSponsorOrdersForStatus } from "@/lib/data/sponsor-order";
 import { getPrisma } from "@/lib/prisma";
 
 type RouteContext = {
@@ -13,24 +13,27 @@ export async function GET(_request: Request, context: RouteContext) {
     const { orderId } = await context.params;
     const prisma = getPrisma();
 
-    let order = await getSponsorOrderForStatus(prisma, orderId);
+    let orders = await getSponsorOrdersForStatus(prisma, orderId);
 
-    if (!order) {
+    if (orders.length === 0) {
       return jsonError("Order not found", 404);
     }
 
-    if (order.status === "PENDING" || order.status === "EXPIRED") {
+    if (orders.some((order) => order.status === "PENDING" || order.status === "EXPIRED")) {
       await syncSponsorOrderFromCashfree(prisma, orderId);
-      order = (await getSponsorOrderForStatus(prisma, orderId)) ?? order;
+      orders = await getSponsorOrdersForStatus(prisma, orderId);
     }
+
+    const [order] = orders;
+    const isPaid = orders.some((row) => row.status === "SUCCESS");
 
     return NextResponse.json({
       success: true,
       data: {
-        order_id: order.orderId,
-        status: order.status,
+        order_id: orderId,
+        status: isPaid ? "SUCCESS" : order.status,
         plan: order.plan,
-        amount: order.amount,
+        amount: orders.reduce((total, row) => total + row.amount, 0),
         learner: order.learner
           ? {
               name: order.learner.name,

@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS proctors (
 CREATE TABLE IF NOT EXISTS sponsor_orders (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   order_id TEXT NOT NULL UNIQUE,
+  payment_order_id TEXT NOT NULL,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
   phone TEXT NOT NULL,
@@ -108,6 +109,7 @@ CREATE INDEX IF NOT EXISTS idx_learners_sponsor_id_sponsorship_ends_at ON learne
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_sponsor_id ON sponsor_orders(sponsor_id);
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_learner_id ON sponsor_orders(learner_id);
 CREATE INDEX IF NOT EXISTS idx_sponsor_orders_status ON sponsor_orders(status);
+CREATE INDEX IF NOT EXISTS idx_sponsor_orders_payment_order_id ON sponsor_orders(payment_order_id);
 
 -- ============================================
 -- MIGRATION HELPERS (for existing data)
@@ -124,3 +126,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS sponsor_orders_share_slug_key ON sponsor_order
 
 -- Add sponsorship expiry so learners return to the pool when a paid period ends
 ALTER TABLE learners ADD COLUMN IF NOT EXISTS sponsorship_ends_at TIMESTAMPTZ;
+
+-- One Cashfree payment can cover several learners; each keeps its own order row
+ALTER TABLE sponsor_orders ADD COLUMN IF NOT EXISTS payment_order_id TEXT;
+UPDATE sponsor_orders SET payment_order_id = order_id WHERE payment_order_id IS NULL;
+ALTER TABLE sponsor_orders ALTER COLUMN payment_order_id SET NOT NULL;

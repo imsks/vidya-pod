@@ -39,12 +39,12 @@ describe("POST /api/webhooks/cashfree", () => {
     process.env.CASHFREE_WEBHOOK_SECRET = "webhook-secret";
     completeSponsorshipPaymentMock.mockResolvedValue({
       success: true,
-      order: { status: "SUCCESS" },
+      status: "SUCCESS",
       alreadyCompleted: false,
     });
     failSponsorshipPaymentMock.mockResolvedValue({
       success: true,
-      order: { status: "FAILED" },
+      status: "FAILED",
       alreadyCompleted: false,
     });
   });
