@@ -3,15 +3,24 @@
 import { useState } from "react";
 import type { PlanType } from "@/constants/pricing";
 import { getPricingTotal } from "./pricing-panel";
+import type { UnavailableLearner } from "./types";
 import { useCashfreeSDK } from "./use-cashfree-sdk";
 
 interface SponsorPaymentFormProps {
-  learnerId: string;
+  learnerIds: string[];
   learnerName?: string;
   plan: PlanType;
+  disabled?: boolean;
+  onUnavailable?: (unavailable: UnavailableLearner[]) => void;
 }
 
-export const SponsorPaymentForm = ({ learnerId, learnerName, plan }: SponsorPaymentFormProps) => {
+export const SponsorPaymentForm = ({
+  learnerIds,
+  learnerName,
+  plan,
+  disabled = false,
+  onUnavailable,
+}: SponsorPaymentFormProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -20,7 +29,8 @@ export const SponsorPaymentForm = ({ learnerId, learnerName, plan }: SponsorPaym
   const [error, setError] = useState("");
   const { loaded: cashfreeLoaded, launchPayment } = useCashfreeSDK();
 
-  const total = getPricingTotal(plan);
+  // Display only; the server prices the checkout itself.
+  const total = getPricingTotal(plan) * learnerIds.length;
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,13 +46,16 @@ export const SponsorPaymentForm = ({ learnerId, learnerName, plan }: SponsorPaym
           email,
           phone,
           plan,
-          learner_ids: [learnerId],
+          learner_ids: learnerIds,
           public_acknowledgement_opt_in: publicAcknowledgementOptIn,
         }),
       });
 
       if (!res.ok) {
         const data = await res.json();
+        if (data.unavailable) {
+          onUnavailable?.(data.unavailable);
+        }
         throw new Error(data.error || "Payment failed");
       }
 
@@ -127,7 +140,7 @@ export const SponsorPaymentForm = ({ learnerId, learnerName, plan }: SponsorPaym
 
       <button
         type="submit"
-        disabled={loading || !cashfreeLoaded}
+        disabled={loading || !cashfreeLoaded || disabled}
         className="w-full rounded-xl bg-gradient-hero text-primary-foreground px-6 py-4 font-bold shadow-glow hover:shadow-lift transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? "Processing..." : `Pay ₹${total.toLocaleString("en-IN")} →`}

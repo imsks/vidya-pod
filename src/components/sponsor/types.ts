@@ -50,6 +50,11 @@ export interface LearnerDetailResponse {
   };
 }
 
+export interface UnavailableLearner {
+  learner_id: string;
+  message: string;
+}
+
 export interface SponsorOrderStatusResponse {
   success: boolean;
   data: {

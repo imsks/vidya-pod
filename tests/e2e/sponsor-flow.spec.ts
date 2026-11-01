@@ -1,4 +1,34 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+const mockAvailableLearners = (page: Page) =>
+  page.route("**/api/learner?*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        data: [
+          {
+            id: "550e8400-e29b-41d4-a716-446655440010",
+            name: "Asha Kumar",
+            standard: "8",
+            image_url: null,
+            is_sponsored: false,
+            created_at: "2024-01-01T00:00:00.000Z",
+          },
+        ],
+        counts: { all: 1, sponsored: 0, available: 1 },
+        pagination: {
+          page: 1,
+          limit: 12,
+          total_count: 1,
+          total_pages: 1,
+          has_next_page: false,
+          has_previous_page: false,
+        },
+      }),
+    });
+  });
 
 test.describe("Sponsor Flow", () => {
   test("sponsor page shows child selection heading", async ({ page }) => {
@@ -17,34 +47,7 @@ test.describe("Sponsor Flow", () => {
   });
 
   test("checkout page shows fund a pod heading when learner exists", async ({ page }) => {
-    await page.route("**/api/learner?*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: [
-            {
-              id: "550e8400-e29b-41d4-a716-446655440010",
-              name: "Asha Kumar",
-              standard: "8",
-              image_url: null,
-              is_sponsored: false,
-              created_at: "2024-01-01T00:00:00.000Z",
-            },
-          ],
-          counts: { all: 1, sponsored: 0, available: 1 },
-          pagination: {
-            page: 1,
-            limit: 12,
-            total_count: 1,
-            total_pages: 1,
-            has_next_page: false,
-            has_previous_page: false,
-          },
-        }),
-      });
-    });
+    await mockAvailableLearners(page);
 
     await page.route("**/api/learner/550e8400-e29b-41d4-a716-446655440010", async (route) => {
       await route.fulfill({
@@ -68,6 +71,25 @@ test.describe("Sponsor Flow", () => {
     await expect(page.getByRole("heading", { name: /fund a pod/i })).toBeVisible();
     await expect(page.getByText(/you're sponsoring/i)).toBeVisible();
     await expect(page.getByText("Asha Kumar")).toBeVisible();
+  });
+
+  test("collects children in a cart and reviews them together", async ({ page }) => {
+    await mockAvailableLearners(page);
+
+    await page.goto("/sponsor");
+    await page.getByRole("button", { name: /add to cart/i }).click();
+    await expect(page.getByRole("region", { name: /sponsorship cart/i })).toContainText(
+      "1 child selected",
+    );
+
+    await page.getByRole("link", { name: /review cart/i }).click();
+    await expect(page).toHaveURL(/\/sponsor\/cart$/);
+    await expect(page.getByRole("list", { name: /children in your cart/i })).toContainText(
+      "Asha Kumar",
+    );
+
+    await page.getByRole("button", { name: /remove asha kumar/i }).click();
+    await expect(page.getByText(/your cart is empty/i)).toBeVisible();
   });
 
   test("thank-you page loads with order id", async ({ page }) => {
