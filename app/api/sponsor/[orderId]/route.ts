@@ -34,13 +34,18 @@ export async function GET(_request: Request, context: RouteContext) {
         status: isPaid ? "SUCCESS" : order.status,
         plan: order.plan,
         amount: orders.reduce((total, row) => total + row.amount, 0),
-        learner: order.learner
-          ? {
-              name: order.learner.name,
-              standard: order.learner.standard,
-            }
-          : null,
-        sponsored_until: order.learner?.sponsorshipEndsAt?.toISOString() ?? null,
+        learners: orders.flatMap(({ learner }) =>
+          learner
+            ? [
+                {
+                  id: learner.id,
+                  name: learner.name,
+                  standard: learner.standard,
+                  sponsored_until: learner.sponsorshipEndsAt?.toISOString() ?? null,
+                },
+              ]
+            : [],
+        ),
         sponsor: order.sponsor ? { name: order.sponsor.name } : null,
       },
     });

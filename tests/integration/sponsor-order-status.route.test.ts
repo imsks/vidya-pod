@@ -25,6 +25,7 @@ describe("GET /api/sponsor/[orderId]", () => {
         plan: "monthly",
         amount: 400,
         learner: {
+          id: "learner-1",
           name: "Asha Kumar",
           standard: "8",
           sponsorshipEndsAt: null,
@@ -52,11 +53,7 @@ describe("GET /api/sponsor/[orderId]", () => {
       status: "PENDING",
       plan: "monthly",
       amount: 400,
-      learner: {
-        name: "Asha Kumar",
-        standard: "8",
-      },
-      sponsored_until: null,
+      learners: [{ id: "learner-1", name: "Asha Kumar", standard: "8", sponsored_until: null }],
       sponsor: null,
     });
   });
@@ -68,6 +65,7 @@ describe("GET /api/sponsor/[orderId]", () => {
         plan: "yearly",
         amount: 4800,
         learner: {
+          id: "learner-2",
           name: "Ravi Sharma",
           standard: "10",
           sponsorshipEndsAt: new Date("2027-11-05T10:00:00.000Z"),
@@ -92,11 +90,14 @@ describe("GET /api/sponsor/[orderId]", () => {
       status: "SUCCESS",
       plan: "yearly",
       amount: 4800,
-      learner: {
-        name: "Ravi Sharma",
-        standard: "10",
-      },
-      sponsored_until: "2027-11-05T10:00:00.000Z",
+      learners: [
+        {
+          id: "learner-2",
+          name: "Ravi Sharma",
+          standard: "10",
+          sponsored_until: "2027-11-05T10:00:00.000Z",
+        },
+      ],
       sponsor: {
         name: "Priya Patel",
       },
@@ -142,15 +143,15 @@ describe("GET /api/sponsor/[orderId]", () => {
     expect(data.data.status).toBe("SUCCESS");
   });
 
-  it("sums the amount of every learner paid for by one payment", async () => {
-    const row = (name: string) => ({
+  it("lists every learner paid for by one payment and sums the amount", async () => {
+    const row = (id: string, name: string) => ({
       status: "SUCCESS",
       plan: "monthly",
       amount: 400,
-      learner: { name, standard: "5", sponsorshipEndsAt: null },
+      learner: { id, name, standard: "5", sponsorshipEndsAt: null },
       sponsor: { name: "Priya Patel" },
     });
-    sponsorOrderFindManyMock.mockResolvedValue([row("Asha"), row("Ravi")]);
+    sponsorOrderFindManyMock.mockResolvedValue([row("l-1", "Asha"), row("l-2", "Ravi")]);
 
     const { GET } = await import("../../app/api/sponsor/[orderId]/route");
     const response = await GET(new Request("http://localhost/api/sponsor/VP_1_abc"), {
@@ -158,7 +159,15 @@ describe("GET /api/sponsor/[orderId]", () => {
     });
 
     const data = await response.json();
-    expect(data.data).toMatchObject({ order_id: "VP_1_abc", status: "SUCCESS", amount: 800 });
+    expect(data.data).toMatchObject({
+      order_id: "VP_1_abc",
+      status: "SUCCESS",
+      amount: 800,
+      learners: [
+        { id: "l-1", name: "Asha", standard: "5", sponsored_until: null },
+        { id: "l-2", name: "Ravi", standard: "5", sponsored_until: null },
+      ],
+    });
     expect(syncSponsorOrderFromCashfreeMock).not.toHaveBeenCalled();
   });
 
