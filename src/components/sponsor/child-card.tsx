@@ -7,6 +7,12 @@ interface ChildCardProps {
   learner: LearnerWithStatus;
 }
 
+export interface CartToggle {
+  inCart: boolean;
+  disabled: boolean;
+  onToggle: () => void;
+}
+
 const formatEndDate = (value: string) =>
   new Date(value).toLocaleDateString("en-IN", {
     day: "numeric",
@@ -64,10 +70,13 @@ const SponsoredCard = ({ learner }: ChildCardProps) => (
   </div>
 );
 
-const AvailableCard = ({ learner }: ChildCardProps) => (
-  <Link
-    href={`/sponsor/${learner.id}`}
-    className={`${CARD_BASE} group border-border transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-lift`}
+const AvailableCard = ({ learner, cartToggle }: ChildCardProps & { cartToggle?: CartToggle }) => (
+  <div
+    className={`${CARD_BASE} group relative transition-all hover:-translate-y-1 hover:shadow-lift ${
+      cartToggle?.inCart
+        ? "border-primary ring-2 ring-primary/30"
+        : "border-border hover:border-primary/40"
+    }`}
   >
     <Avatar learner={learner} ringClass="ring-primary/10" />
     <Identity learner={learner} />
@@ -79,12 +88,36 @@ const AvailableCard = ({ learner }: ChildCardProps) => (
       <p className="text-xs text-muted-foreground">
         from <span className="font-bold text-foreground">₹{MONTHLY_TOTAL}</span>/month
       </p>
-      <span className="mt-2 block rounded-full bg-foreground px-4 py-2.5 text-sm font-semibold text-background transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+      {/* The link covers the whole card; only the cart button sits above it. */}
+      <Link
+        href={`/sponsor/${learner.id}`}
+        className="mt-2 block rounded-full bg-foreground px-4 py-2.5 text-sm font-semibold text-background transition-colors group-hover:bg-primary group-hover:text-primary-foreground after:absolute after:inset-0 after:rounded-2xl"
+      >
         Sponsor {learner.name.split(" ")[0]}
-      </span>
+      </Link>
+      {cartToggle && (
+        <button
+          type="button"
+          onClick={cartToggle.onToggle}
+          disabled={cartToggle.disabled}
+          title={cartToggle.disabled ? "Your cart is full" : undefined}
+          className={`relative z-10 mt-2 w-full rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+            cartToggle.inCart
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border bg-background hover:border-primary hover:text-primary"
+          }`}
+        >
+          {cartToggle.inCart ? "✓ In cart" : "+ Add to cart"}
+          <span className="sr-only"> — {learner.name}</span>
+        </button>
+      )}
     </div>
-  </Link>
+  </div>
 );
 
-export const ChildCard = ({ learner }: ChildCardProps) =>
-  learner.is_sponsored ? <SponsoredCard learner={learner} /> : <AvailableCard learner={learner} />;
+export const ChildCard = ({ learner, cartToggle }: ChildCardProps & { cartToggle?: CartToggle }) =>
+  learner.is_sponsored ? (
+    <SponsoredCard learner={learner} />
+  ) : (
+    <AvailableCard learner={learner} cartToggle={cartToggle} />
+  );

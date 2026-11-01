@@ -130,7 +130,7 @@ export const SponsorCheckoutPage = ({ learnerId }: SponsorCheckoutPageProps) => 
         </div>
 
         <div className="mt-8">
-          <SponsorPaymentForm learnerId={learnerId} learnerName={learner.name} plan={plan} />
+          <SponsorPaymentForm learnerIds={[learnerId]} learnerName={learner.name} plan={plan} />
         </div>
       </main>
     </div>
