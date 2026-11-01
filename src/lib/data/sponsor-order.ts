@@ -9,6 +9,7 @@ const orderStatusSelect = {
   amount: true,
   learner: {
     select: {
+      id: true,
       name: true,
       standard: true,
       sponsorshipEndsAt: true,
