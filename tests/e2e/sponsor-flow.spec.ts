@@ -104,10 +104,15 @@ test.describe("Sponsor Flow", () => {
             status: "PENDING",
             plan: "monthly",
             amount: 400,
-            learner: {
-              name: "Asha Kumar",
-              standard: "8",
-            },
+            learners: [
+              {
+                id: "550e8400-e29b-41d4-a716-446655440010",
+                name: "Asha Kumar",
+                standard: "8",
+                sponsored_until: null,
+              },
+            ],
+            sponsor: null,
           },
         }),
       });
@@ -116,5 +121,43 @@ test.describe("Sponsor Flow", () => {
     await page.goto("/sponsor/thank-you?order_id=VP_test_order");
     await expect(page.getByRole("heading", { name: /processing payment/i })).toBeVisible();
     await expect(page.getByText("VP_test_order")).toBeVisible();
+  });
+
+  test("thank-you page lists every child of a paid cart and empties the cart", async ({ page }) => {
+    const learners = [
+      { id: "550e8400-e29b-41d4-a716-446655440010", name: "Asha Kumar", standard: "8" },
+      { id: "550e8400-e29b-41d4-a716-446655440011", name: "Ravi Sharma", standard: "6" },
+    ];
+    await page.addInitScript(
+      (cart) => {
+        window.localStorage.setItem("vidyapod:sponsor-cart", JSON.stringify(cart));
+      },
+      learners.map((learner) => ({ ...learner, image_url: null })),
+    );
+    await page.route("**/api/sponsor/VP_cart_order", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            order_id: "VP_cart_order",
+            status: "SUCCESS",
+            plan: "monthly",
+            amount: 600,
+            learners: learners.map((learner) => ({ ...learner, sponsored_until: null })),
+            sponsor: { name: "Priya" },
+          },
+        }),
+      });
+    });
+
+    await page.goto("/sponsor/thank-you?order_id=VP_cart_order");
+    await expect(page.getByRole("heading", { name: /thank you/i })).toBeVisible();
+    await expect(page.getByRole("listitem").filter({ hasText: "Asha Kumar" })).toBeVisible();
+    await expect(page.getByRole("listitem").filter({ hasText: "Ravi Sharma" })).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.localStorage.getItem("vidyapod:sponsor-cart")))
+      .toBe("[]");
   });
 });

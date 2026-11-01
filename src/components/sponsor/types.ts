@@ -62,14 +62,14 @@ export interface SponsorOrderStatusResponse {
     status: string;
     plan: string;
     amount: number;
-    learner: {
+    learners: {
+      id: string;
       name: string;
       standard: string;
-    } | null;
-    sponsored_until: string | null;
+      sponsored_until: string | null;
+    }[];
     sponsor: {
       name: string;
-      email: string;
     } | null;
   };
 }

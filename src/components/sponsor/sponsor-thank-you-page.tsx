@@ -6,8 +6,17 @@ import { useEffect, useState } from "react";
 import { SponsorHeader } from "./sponsor-header";
 import { SponsorshipShareCard } from "./sponsorship-share-card";
 import type { SponsorOrderStatusResponse } from "./types";
+import { removeFromSponsorCart } from "./use-sponsor-cart";
 
 const POLL_INTERVAL_MS = 3000;
+
+const formatSupportedUntil = (value: string) =>
+  new Date(value).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
 
 export const SponsorThankYouPage = () => {
   const searchParams = useSearchParams();
@@ -33,6 +42,10 @@ export const SponsorThankYouPage = () => {
         const data: SponsorOrderStatusResponse = await res.json();
         setOrderStatus(data.data);
         setError("");
+
+        if (data.data.status === "SUCCESS") {
+          removeFromSponsorCart(data.data.learners.map((learner) => learner.id));
+        }
 
         if (data.data.status === "SUCCESS" || data.data.status === "FAILED") {
           return true;
@@ -94,6 +107,9 @@ export const SponsorThankYouPage = () => {
   const isSuccess = orderStatus?.status === "SUCCESS";
   const isFailed = orderStatus?.status === "FAILED";
   const isPending = !isSuccess && !isFailed;
+  const learners = orderStatus?.learners ?? [];
+  const [firstLearner] = learners;
+  const isMultiple = learners.length > 1;
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,30 +148,60 @@ export const SponsorThankYouPage = () => {
               </p>
             )}
 
-            {isSuccess && orderStatus?.learner && (
+            {isSuccess && orderStatus && firstLearner && (
               <>
-                <p className="mt-3 text-muted-foreground">
-                  You&apos;re now sponsoring the education of{" "}
-                  <strong className="font-semibold text-primary">{orderStatus.learner.name}</strong>
-                  , a Grade {orderStatus.learner.standard} student.
-                </p>
-                {orderStatus.sponsored_until && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Supported until{" "}
-                    <strong className="font-semibold text-foreground">
-                      {new Date(orderStatus.sponsored_until).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        timeZone: "Asia/Kolkata",
-                      })}
-                    </strong>
-                    .
-                  </p>
+                {isMultiple ? (
+                  <>
+                    <p className="mt-3 text-muted-foreground">
+                      You&apos;re now sponsoring the education of{" "}
+                      <strong className="font-semibold text-primary">
+                        {learners.length} children
+                      </strong>{" "}
+                      with one payment.
+                    </p>
+                    <ul className="mx-auto mt-6 max-w-md space-y-2 text-left">
+                      {learners.map((learner) => (
+                        <li
+                          key={learner.id}
+                          className="flex flex-wrap items-baseline justify-between gap-x-4 rounded-xl border border-border bg-card px-4 py-3"
+                        >
+                          <span>
+                            <strong className="font-semibold">{learner.name}</strong>
+                            <span className="text-sm text-muted-foreground">
+                              {" "}
+                              · Grade {learner.standard}
+                            </span>
+                          </span>
+                          {learner.sponsored_until && (
+                            <span className="text-xs text-muted-foreground">
+                              Supported until {formatSupportedUntil(learner.sponsored_until)}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-3 text-muted-foreground">
+                      You&apos;re now sponsoring the education of{" "}
+                      <strong className="font-semibold text-primary">{firstLearner.name}</strong>, a
+                      Grade {firstLearner.standard} student.
+                    </p>
+                    {firstLearner.sponsored_until && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Supported until{" "}
+                        <strong className="font-semibold text-foreground">
+                          {formatSupportedUntil(firstLearner.sponsored_until)}
+                        </strong>
+                        .
+                      </p>
+                    )}
+                  </>
                 )}
                 <SponsorshipShareCard
-                  learnerName={orderStatus.learner.name}
-                  learnerStandard={orderStatus.learner.standard}
+                  learnerName={isMultiple ? `${learners.length} children` : firstLearner.name}
+                  learnerStandard={isMultiple ? null : firstLearner.standard}
                   plan={orderStatus.plan}
                   amount={orderStatus.amount}
                 />
@@ -165,7 +211,7 @@ export const SponsorThankYouPage = () => {
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               {isFailed && (
                 <Link
-                  href="/sponsor"
+                  href={isMultiple ? "/sponsor/cart" : "/sponsor"}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-hero px-6 py-3 font-semibold text-primary-foreground shadow-glow transition-all hover:shadow-lift"
                 >
                   Try again →

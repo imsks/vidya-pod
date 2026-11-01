@@ -51,6 +51,10 @@ const subscribe = (listener: () => void) => {
   };
 };
 
+/** Usable outside React, e.g. to drop children once their payment succeeds. */
+export const removeFromSponsorCart = (ids: string[]) =>
+  write(read().filter((item) => !ids.includes(item.id)));
+
 /** Children the donor picked to sponsor together, kept in localStorage. */
 export const useSponsorCart = () => {
   const items = useSyncExternalStore(subscribe, read, () => EMPTY);
@@ -66,6 +70,6 @@ export const useSponsorCart = () => {
         write([...read(), learner]);
       }
     },
-    remove: (ids: string[]) => write(read().filter((item) => !ids.includes(item.id))),
+    remove: removeFromSponsorCart,
   };
 };
