@@ -73,23 +73,23 @@ test.describe("Sponsor Flow", () => {
     await expect(page.getByText("Asha Kumar")).toBeVisible();
   });
 
-  test("collects children in a cart and reviews them together", async ({ page }) => {
+  test("collects children in a list and reviews them together", async ({ page }) => {
     await mockAvailableLearners(page);
 
     await page.goto("/sponsor");
-    await page.getByRole("button", { name: /add to cart/i }).click();
-    await expect(page.getByRole("region", { name: /sponsorship cart/i })).toContainText(
+    await page.getByRole("button", { name: /add to list/i }).click();
+    await expect(page.getByRole("region", { name: /sponsorship list/i })).toContainText(
       "1 child selected",
     );
 
-    await page.getByRole("link", { name: /review cart/i }).click();
+    await page.getByRole("link", { name: /review list/i }).click();
     await expect(page).toHaveURL(/\/sponsor\/cart$/);
-    await expect(page.getByRole("list", { name: /children in your cart/i })).toContainText(
+    await expect(page.getByRole("list", { name: /children in your list/i })).toContainText(
       "Asha Kumar",
     );
 
     await page.getByRole("button", { name: /remove asha kumar/i }).click();
-    await expect(page.getByText(/your cart is empty/i)).toBeVisible();
+    await expect(page.getByText(/your list is empty/i)).toBeVisible();
   });
 
   test("thank-you page loads with order id", async ({ page }) => {

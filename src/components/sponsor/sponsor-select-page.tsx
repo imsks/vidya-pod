@@ -191,7 +191,7 @@ export const SponsorSelectPage = () => {
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             {counts.sponsored} of {counts.all} children are sponsored. Select one of the children
-            below to begin funding their learning pod, or add several to your cart and sponsor them
+            below to begin funding their learning pod, or add several to your list and sponsor them
             all with one payment.
           </p>
         </div>
@@ -221,7 +221,7 @@ export const SponsorSelectPage = () => {
 
       {cart.items.length > 0 && (
         <section
-          aria-label="Sponsorship cart"
+          aria-label="Sponsorship list"
           className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 backdrop-blur-lg"
         >
           <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-3">
@@ -234,14 +234,14 @@ export const SponsorSelectPage = () => {
                 · from ₹{(MONTHLY_TOTAL * cart.items.length).toLocaleString("en-IN")}/mo
               </span>
               {cart.isFull && (
-                <span className="ml-2 text-xs text-muted-foreground">(cart is full)</span>
+                <span className="ml-2 text-xs text-muted-foreground">(list is full)</span>
               )}
             </p>
             <Link
               href="/sponsor/cart"
               className="inline-flex items-center gap-2 rounded-full bg-gradient-hero px-6 py-3 text-sm font-bold text-primary-foreground shadow-glow transition-all hover:shadow-lift"
             >
-              Review cart →
+              Review list →
             </Link>
           </div>
         </section>
