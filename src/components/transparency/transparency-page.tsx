@@ -12,6 +12,21 @@ const formatINR = (amount: number) =>
 const formatDate = (incurredAt: string) =>
   new Date(`${incurredAt}T00:00:00.000Z`).toLocaleDateString("en-IN", { timeZone: "UTC" });
 
+const AVATAR_GRADIENTS = [
+  "bg-gradient-hero",
+  "bg-gradient-dusk",
+  "bg-gradient-to-br from-accent to-sponsor",
+  "bg-gradient-to-br from-tribute to-primary-glow",
+];
+
+const getInitials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => Array.from(part)[0]?.toUpperCase() ?? "")
+    .join("") || "?";
+
 export const TransparencyPage = () => {
   const [summary, setSummary] = useState<TransparencyResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -139,27 +154,57 @@ export const TransparencyPage = () => {
           )}
         </section>
 
-        <section className="mt-12 rounded-2xl border border-border bg-card p-6">
-          <h2 className="font-display text-2xl font-black">Thank you, supporters</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Names appear here only when a supporter has chosen to be acknowledged publicly.
-          </p>
-          {supporters.length ? (
-            <ul className="mt-5 flex flex-wrap gap-3">
-              {supporters.map((supporter) => (
-                <li
-                  key={supporter.id}
-                  className="rounded-full border border-border px-4 py-2 text-sm font-semibold"
-                >
-                  {supporter.name}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Our first public thank-yous will appear here soon.
-            </p>
-          )}
+        <section className="relative mt-12 overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary/15 blur-3xl"
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -bottom-24 -left-12 h-56 w-56 rounded-full bg-accent/15 blur-3xl"
+          />
+          <div className="relative">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="font-display text-2xl font-black">
+                  Thank you, <span className="text-gradient">supporters</span>
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Names appear here only when a supporter has chosen to be acknowledged publicly.
+                </p>
+              </div>
+              {supporters.length > 0 && (
+                <span className="rounded-full bg-gradient-hero px-3 py-1 text-xs font-bold text-primary-foreground shadow-glow">
+                  💛 {supporters.length} {supporters.length === 1 ? "supporter" : "supporters"}
+                </span>
+              )}
+            </div>
+            {supporters.length ? (
+              <ul className="mt-6 flex flex-wrap gap-3">
+                {supporters.map((supporter, index) => (
+                  <li
+                    key={supporter.id}
+                    className="group flex animate-fade-up items-center gap-3 rounded-full border border-border bg-background py-1.5 pl-1.5 pr-4 shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-glow"
+                    style={{ animationDelay: `${index * 60}ms` }}
+                  >
+                    <span
+                      aria-hidden
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black tracking-wide text-white shadow-soft ring-2 ring-card transition-transform group-hover:rotate-6 group-hover:scale-110 ${
+                        AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length]
+                      }`}
+                    >
+                      {getInitials(supporter.name)}
+                    </span>
+                    <span className="text-sm font-semibold">{supporter.name}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground">
+                Our first public thank-yous will appear here soon.
+              </p>
+            )}
+          </div>
         </section>
       </>
     );
