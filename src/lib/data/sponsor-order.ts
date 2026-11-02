@@ -1,10 +1,9 @@
 import "server-only";
 
-import { SponsorOrderStatus, type PrismaClient, type SponsorOrder } from "@/generated/prisma";
+import { SponsorOrderStatus, type PrismaClient } from "@/generated/prisma";
 
 /** Donor email is deliberately excluded — this feeds an unauthenticated endpoint. */
 const orderStatusSelect = {
-  orderId: true,
   status: true,
   plan: true,
   amount: true,
@@ -22,19 +21,22 @@ const orderStatusSelect = {
   },
 } as const;
 
-export type SponsorOrderStatusRecord = NonNullable<
-  Awaited<ReturnType<typeof getSponsorOrderForStatus>>
->;
-
-export const getSponsorOrderForStatus = (prisma: PrismaClient, orderId: string) =>
-  prisma.sponsorOrder.findUnique({ where: { orderId }, select: orderStatusSelect });
+export const getSponsorOrdersForStatus = (prisma: PrismaClient, paymentOrderId: string) =>
+  prisma.sponsorOrder.findMany({
+    where: { paymentOrderId },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: orderStatusSelect,
+  });
 
 export const attachPaymentSession = (
   prisma: PrismaClient,
-  id: string,
+  paymentOrderId: string,
   paymentSessionId: string,
-): Promise<SponsorOrder> =>
-  prisma.sponsorOrder.update({ where: { id }, data: { paymentSessionId } });
+) => prisma.sponsorOrder.updateMany({ where: { paymentOrderId }, data: { paymentSessionId } });
 
-export const markSponsorOrderFailed = (prisma: PrismaClient, id: string): Promise<SponsorOrder> =>
-  prisma.sponsorOrder.update({ where: { id }, data: { status: SponsorOrderStatus.FAILED } });
+/** Frees every learner held by a payment that will never be completed. */
+export const markPaymentOrderFailed = (prisma: PrismaClient, paymentOrderId: string) =>
+  prisma.sponsorOrder.updateMany({
+    where: { paymentOrderId, status: SponsorOrderStatus.PENDING },
+    data: { status: SponsorOrderStatus.FAILED },
+  });

@@ -99,6 +99,8 @@ enum ExpenseCategory {
 model SponsorOrder {
   id                         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orderId                    String             @unique @map("order_id")
+  /// Cashfree order id. One payment can cover several learners, one row each.
+  paymentOrderId             String             @map("payment_order_id")
   name                       String
   email                      String
   phone                      String
@@ -117,6 +119,7 @@ model SponsorOrder {
   @@index([sponsorId])
   @@index([learnerId])
   @@index([status])
+  @@index([paymentOrderId])
   @@map("sponsor_orders")
 }
 

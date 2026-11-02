@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PRICING, type PlanType } from "@/constants/pricing";
+import { MAX_LEARNERS_PER_CHECKOUT, type PlanType } from "@/constants/pricing";
 
 export const sponsorPlans = ["monthly", "yearly"] as const satisfies readonly PlanType[];
 
@@ -8,8 +8,14 @@ export const sponsorSchema = z.object({
   email: z.string().trim().email("Valid email is required"),
   phone: z.string().trim().min(1, "Phone is required"),
   plan: z.enum(sponsorPlans),
-  amount: z.number().positive("Amount must be positive"),
-  learner_id: z.string().uuid("Valid learner ID is required"),
+  learner_ids: z
+    .array(z.string().uuid("Valid learner ID is required"))
+    .min(1, "Select at least one child")
+    .max(
+      MAX_LEARNERS_PER_CHECKOUT,
+      `You can sponsor up to ${MAX_LEARNERS_PER_CHECKOUT} children at once`,
+    )
+    .refine((ids) => new Set(ids).size === ids.length, "Each child can only be selected once"),
   public_acknowledgement_opt_in: z.boolean().default(false),
 });
 
@@ -24,15 +30,6 @@ export const parseSponsorBody = (body: unknown): SponsorParseResult => {
   if (!result.success) {
     const message = result.error.issues[0]?.message ?? "Invalid sponsor payload";
     return { success: false, error: message, status: 400 };
-  }
-
-  const expectedAmount = PRICING[result.data.plan].total;
-  if (result.data.amount !== expectedAmount) {
-    return {
-      success: false,
-      error: `Amount must be ${expectedAmount} for the ${result.data.plan} plan`,
-      status: 400,
-    };
   }
 
   return { success: true, data: result.data };

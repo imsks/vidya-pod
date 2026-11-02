@@ -47,9 +47,9 @@ describe("sponsorship reservation", () => {
   });
 
   describe("releaseExpiredReservations", () => {
-    it("expires stale pending orders after reconciling with cashfree", async () => {
+    it("expires stale pending orders after reconciling their payment with cashfree", async () => {
       const sponsorOrder: SponsorOrderMocks = {
-        findMany: vi.fn().mockResolvedValue([{ id: "order-1", orderId: "VP_1" }]),
+        findMany: vi.fn().mockResolvedValue([{ id: "order-1", paymentOrderId: "VP_1" }]),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn(),
         create: vi.fn(),
@@ -68,7 +68,7 @@ describe("sponsorship reservation", () => {
 
     it("leaves an order alone when cashfree reports it as paid", async () => {
       const sponsorOrder: SponsorOrderMocks = {
-        findMany: vi.fn().mockResolvedValue([{ id: "order-1", orderId: "VP_1" }]),
+        findMany: vi.fn().mockResolvedValue([{ id: "order-1", paymentOrderId: "VP_1" }]),
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
         update: vi.fn(),
         create: vi.fn(),
@@ -98,7 +98,8 @@ describe("sponsorship reservation", () => {
 
   describe("reserveLearnerForSponsorship", () => {
     const input = {
-      orderId: "VP_1",
+      orderId: "VP_1-1",
+      paymentOrderId: "VP_1",
       name: "Donor",
       email: "donor@example.com",
       phone: "9999999999",

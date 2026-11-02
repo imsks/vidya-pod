@@ -19,6 +19,7 @@ export const getReservationCutoff = (now: Date = new Date()): Date =>
 
 export type ReservationInput = {
   orderId: string;
+  paymentOrderId: string;
   name: string;
   email: string;
   phone: string;
@@ -46,13 +47,13 @@ export const releaseExpiredReservations = async (
       status: SponsorOrderStatus.PENDING,
       createdAt: { lt: getReservationCutoff() },
     },
-    select: { id: true, orderId: true },
+    select: { id: true, paymentOrderId: true },
   });
 
   let released = 0;
 
   for (const order of staleOrders) {
-    await syncSponsorOrderFromCashfree(prisma, order.orderId);
+    await syncSponsorOrderFromCashfree(prisma, order.paymentOrderId);
 
     const { count } = await prisma.sponsorOrder.updateMany({
       where: { id: order.id, status: SponsorOrderStatus.PENDING },

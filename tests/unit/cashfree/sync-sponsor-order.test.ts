@@ -4,7 +4,7 @@ const fetchCashfreeOrderMock = vi.fn();
 const fetchCashfreePaymentsForOrderMock = vi.fn();
 const completeSponsorshipPaymentMock = vi.fn();
 const failSponsorshipPaymentMock = vi.fn();
-const sponsorOrderFindUniqueMock = vi.fn();
+const sponsorOrderCountMock = vi.fn();
 
 vi.mock("@/lib/cashfree/config", () => ({
   isCashfreeConfigured: () => true,
@@ -34,41 +34,40 @@ vi.mock("@/lib/sponsorship/complete-sponsorship", () => ({
 }));
 
 describe("syncSponsorOrderFromCashfree", () => {
+  const prisma = {
+    sponsorOrder: { count: sponsorOrderCountMock },
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    sponsorOrderFindUniqueMock.mockResolvedValue({ status: "PENDING" });
+    sponsorOrderCountMock.mockResolvedValue(2);
     fetchCashfreeOrderMock.mockResolvedValue({ order_id: "VP_123", order_status: "PAID" });
     fetchCashfreePaymentsForOrderMock.mockResolvedValue([]);
     completeSponsorshipPaymentMock.mockResolvedValue({
       success: true,
       alreadyCompleted: false,
-      order: { status: "SUCCESS" },
+      status: "SUCCESS",
     });
     failSponsorshipPaymentMock.mockResolvedValue({
       success: true,
       alreadyCompleted: false,
-      order: { status: "FAILED" },
+      status: "FAILED",
     });
   });
 
-  it("completes a pending order when Cashfree reports PAID", async () => {
-    const prisma = {
-      sponsorOrder: { findUnique: sponsorOrderFindUniqueMock },
-    };
-
+  it("completes a pending payment when Cashfree reports PAID", async () => {
     const { syncSponsorOrderFromCashfree } = await import("@/lib/cashfree/sync-sponsor-order");
     const updated = await syncSponsorOrderFromCashfree(prisma as never, "VP_123");
 
     expect(updated).toBe(true);
+    expect(sponsorOrderCountMock).toHaveBeenCalledWith({
+      where: { paymentOrderId: "VP_123", status: { in: ["PENDING", "EXPIRED"] } },
+    });
     expect(completeSponsorshipPaymentMock).toHaveBeenCalledWith(prisma, "VP_123");
   });
 
-  it("skips sync when the local order is not pending", async () => {
-    sponsorOrderFindUniqueMock.mockResolvedValue({ status: "SUCCESS" });
-
-    const prisma = {
-      sponsorOrder: { findUnique: sponsorOrderFindUniqueMock },
-    };
+  it("skips sync once every row of the payment is settled", async () => {
+    sponsorOrderCountMock.mockResolvedValue(0);
 
     const { syncSponsorOrderFromCashfree } = await import("@/lib/cashfree/sync-sponsor-order");
     const updated = await syncSponsorOrderFromCashfree(prisma as never, "VP_123");
@@ -81,10 +80,6 @@ describe("syncSponsorOrderFromCashfree", () => {
     fetchCashfreeOrderMock.mockResolvedValue({ order_id: "VP_123", order_status: "ACTIVE" });
     fetchCashfreePaymentsForOrderMock.mockResolvedValue([{ payment_status: "SUCCESS" }]);
 
-    const prisma = {
-      sponsorOrder: { findUnique: sponsorOrderFindUniqueMock },
-    };
-
     const { syncSponsorOrderFromCashfree } = await import("@/lib/cashfree/sync-sponsor-order");
     const updated = await syncSponsorOrderFromCashfree(prisma as never, "VP_123");
 
@@ -93,12 +88,8 @@ describe("syncSponsorOrderFromCashfree", () => {
     expect(completeSponsorshipPaymentMock).toHaveBeenCalledWith(prisma, "VP_123");
   });
 
-  it("marks the order failed when Cashfree reports EXPIRED", async () => {
+  it("marks the payment failed when Cashfree reports EXPIRED", async () => {
     fetchCashfreeOrderMock.mockResolvedValue({ order_id: "VP_123", order_status: "EXPIRED" });
-
-    const prisma = {
-      sponsorOrder: { findUnique: sponsorOrderFindUniqueMock },
-    };
 
     const { syncSponsorOrderFromCashfree } = await import("@/lib/cashfree/sync-sponsor-order");
     const updated = await syncSponsorOrderFromCashfree(prisma as never, "VP_123");
