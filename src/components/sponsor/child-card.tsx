@@ -100,14 +100,14 @@ const AvailableCard = ({ learner, cartToggle }: ChildCardProps & { cartToggle?: 
           type="button"
           onClick={cartToggle.onToggle}
           disabled={cartToggle.disabled}
-          title={cartToggle.disabled ? "Your cart is full" : undefined}
+          title={cartToggle.disabled ? "Your list is full" : undefined}
           className={`relative z-10 mt-2 w-full rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
             cartToggle.inCart
               ? "border-primary bg-primary/10 text-primary"
               : "border-border bg-background hover:border-primary hover:text-primary"
           }`}
         >
-          {cartToggle.inCart ? "✓ In cart" : "+ Add to cart"}
+          {cartToggle.inCart ? "✓ Added" : "+ Add to list"}
           <span className="sr-only"> — {learner.name}</span>
         </button>
       )}

@@ -41,7 +41,7 @@ export const SponsorCartPage = () => {
 
         <div className="mt-8 text-center">
           <div className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-primary">
-            Your cart
+            Your list
           </div>
           <h1 className="mt-3 text-4xl md:text-5xl font-black font-display">
             Sponsor <span className="text-gradient">together</span>
@@ -55,11 +55,11 @@ export const SponsorCartPage = () => {
         {cart.items.length === 0 ? (
           <div className="mt-10 text-center py-10">
             <div className="w-16 h-16 mx-auto rounded-full bg-accent/20 flex items-center justify-center text-3xl mb-4">
-              🛒
+              �
             </div>
-            <p className="text-lg font-semibold">Your cart is empty</p>
+            <p className="text-lg font-semibold">Your list is empty</p>
             <p className="text-muted-foreground mt-2">
-              Add children from the list to sponsor them all with one payment.
+              Add children to your list to sponsor them all with one payment.
             </p>
             <Link
               href="/sponsor"
@@ -70,7 +70,7 @@ export const SponsorCartPage = () => {
           </div>
         ) : (
           <>
-            <ul className="mt-10 space-y-3" aria-label="Children in your cart">
+            <ul className="mt-10 space-y-3" aria-label="Children in your list">
               {cart.items.map((item) => (
                 <li
                   key={item.id}
