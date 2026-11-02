@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { DONOR_WHATSAPP_COMMUNITY_URL } from "@/constants/community";
 import { SponsorHeader } from "./sponsor-header";
 import { SponsorshipShareCard } from "./sponsorship-share-card";
 import type { SponsorOrderStatusResponse } from "./types";
@@ -205,6 +206,21 @@ export const SponsorThankYouPage = () => {
                   plan={orderStatus.plan}
                   amount={orderStatus.amount}
                 />
+                <section className="mt-8 rounded-3xl border border-border bg-card px-5 py-6 text-left sm:px-7">
+                  <h2 className="font-display text-xl font-black">Join the donor community</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Get classroom updates, photos and progress from the pods you support — and meet
+                    fellow sponsors on WhatsApp.
+                  </p>
+                  <a
+                    href={DONOR_WHATSAPP_COMMUNITY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 py-3 font-semibold text-white transition-all hover:bg-[#1ebe5b] hover:shadow-lift"
+                  >
+                    Join WhatsApp Community ↗
+                  </a>
+                </section>
               </>
             )}
 

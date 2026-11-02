@@ -121,6 +121,7 @@ test.describe("Sponsor Flow", () => {
     await page.goto("/sponsor/thank-you?order_id=VP_test_order");
     await expect(page.getByRole("heading", { name: /processing payment/i })).toBeVisible();
     await expect(page.getByText("VP_test_order")).toBeVisible();
+    await expect(page.getByRole("link", { name: /join whatsapp community/i })).toHaveCount(0);
   });
 
   test("thank-you page lists every child of a paid cart and empties the cart", async ({ page }) => {
@@ -156,6 +157,10 @@ test.describe("Sponsor Flow", () => {
     await expect(page.getByRole("heading", { name: /thank you/i })).toBeVisible();
     await expect(page.getByRole("listitem").filter({ hasText: "Asha Kumar" })).toBeVisible();
     await expect(page.getByRole("listitem").filter({ hasText: "Ravi Sharma" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /join whatsapp community/i })).toHaveAttribute(
+      "href",
+      /^https:\/\/chat\.whatsapp\.com\//,
+    );
     await expect
       .poll(() => page.evaluate(() => window.localStorage.getItem("vidyapod:sponsor-cart")))
       .toBe("[]");

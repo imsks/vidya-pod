@@ -30,6 +30,14 @@ test.describe("Home Page", () => {
     await expect(page).toHaveURL(/sponsor/);
   });
 
+  test("shows whatsapp community link", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("link", { name: /join whatsapp community/i })).toHaveAttribute(
+      "href",
+      /^https:\/\/chat\.whatsapp\.com\//,
+    );
+  });
+
   test("register route redirects to admin", async ({ page }) => {
     await page.goto("/register");
     await expect(page).toHaveURL(/\/admin$/);
