@@ -1,3 +1,5 @@
+import "server-only";
+
 // TODO: Remove this PIN-based authentication once RBAC is enabled.
 // This is a temporary solution for admin-only access.
 

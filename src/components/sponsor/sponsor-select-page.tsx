@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ChildCard } from "./child-card";
+import { MONTHLY_TOTAL } from "@/constants/pricing";
+import { ChildCard, type CartToggle } from "./child-card";
 import { SponsorHeader } from "./sponsor-header";
 import type { AllLearnersResponse, LearnerStatusFilter, LearnerWithStatus } from "./types";
+import { useSponsorCart } from "./use-sponsor-cart";
 
 const PAGE_LIMIT = 12;
 
@@ -44,6 +47,24 @@ export const SponsorSelectPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const cart = useSponsorCart();
+
+  const cartToggleFor = (learner: LearnerWithStatus): CartToggle => {
+    const inCart = cart.has(learner.id);
+    return {
+      inCart,
+      disabled: !inCart && cart.isFull,
+      onToggle: () =>
+        inCart
+          ? cart.remove([learner.id])
+          : cart.add({
+              id: learner.id,
+              name: learner.name,
+              standard: learner.standard,
+              image_url: learner.image_url,
+            }),
+    };
+  };
 
   const fetchLearners = useCallback(
     async (status: LearnerStatusFilter, pageNum: number, append: boolean) => {
@@ -91,11 +112,13 @@ export const SponsorSelectPage = () => {
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="p-6 rounded-2xl bg-card border border-border shadow-soft animate-pulse"
+              className="flex flex-col items-center rounded-2xl border border-border bg-card p-5 shadow-soft animate-pulse"
             >
-              <div className="w-20 h-20 rounded-full bg-muted mx-auto" />
-              <div className="mt-4 h-5 bg-muted rounded w-3/4 mx-auto" />
-              <div className="mt-2 h-4 bg-muted rounded w-1/2 mx-auto" />
+              <div className="h-24 w-24 rounded-full bg-muted" />
+              <div className="mt-4 h-5 w-3/4 rounded bg-muted" />
+              <div className="mt-2 h-4 w-1/3 rounded bg-muted" />
+              <div className="mt-3 h-3 w-2/3 rounded bg-muted" />
+              <div className="mt-6 h-10 w-full rounded-full bg-muted" />
             </div>
           ))}
         </div>
@@ -130,7 +153,11 @@ export const SponsorSelectPage = () => {
       <>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {learners.map((learner) => (
-            <ChildCard key={learner.id} learner={learner} />
+            <ChildCard
+              key={learner.id}
+              learner={learner}
+              cartToggle={learner.is_sponsored ? undefined : cartToggleFor(learner)}
+            />
           ))}
         </div>
 
@@ -154,7 +181,7 @@ export const SponsorSelectPage = () => {
     <div className="min-h-screen bg-background">
       <SponsorHeader />
 
-      <main className="max-w-7xl mx-auto px-6 py-16">
+      <main className={`max-w-7xl mx-auto px-6 py-16 ${cart.items.length > 0 ? "pb-32" : ""}`}>
         <div className="text-center">
           <div className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Sponsor a Pod
@@ -164,7 +191,8 @@ export const SponsorSelectPage = () => {
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             {counts.sponsored} of {counts.all} children are sponsored. Select one of the children
-            below to begin funding their learning pod.
+            below to begin funding their learning pod, or add several to your cart and sponsor them
+            all with one payment.
           </p>
         </div>
 
@@ -190,6 +218,34 @@ export const SponsorSelectPage = () => {
 
         <div className="mt-12">{renderGrid()}</div>
       </main>
+
+      {cart.items.length > 0 && (
+        <section
+          aria-label="Sponsorship cart"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/90 backdrop-blur-lg"
+        >
+          <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm sm:text-base">
+              <strong className="font-bold">
+                {cart.items.length} {cart.items.length === 1 ? "child" : "children"} selected
+              </strong>
+              <span className="text-muted-foreground">
+                {" "}
+                · from ₹{(MONTHLY_TOTAL * cart.items.length).toLocaleString("en-IN")}/mo
+              </span>
+              {cart.isFull && (
+                <span className="ml-2 text-xs text-muted-foreground">(cart is full)</span>
+              )}
+            </p>
+            <Link
+              href="/sponsor/cart"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-hero px-6 py-3 text-sm font-bold text-primary-foreground shadow-glow transition-all hover:shadow-lift"
+            >
+              Review cart →
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 };

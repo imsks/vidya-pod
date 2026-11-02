@@ -211,7 +211,7 @@ describe("POST /api/learner", () => {
     });
   });
 
-  it("returns 500 when prisma insert fails", async () => {
+  it("returns 500 without leaking the underlying error when prisma insert fails", async () => {
     learnerCreateMock.mockRejectedValueOnce(new Error("db down"));
     const { POST } = await import("../../app/api/learner/route");
 
@@ -229,7 +229,8 @@ describe("POST /api/learner", () => {
 
     expect(response.status).toBe(500);
     const data = await response.json();
-    expect(data.error).toBe("db down");
+    expect(data.error).toBe("Internal server error");
+    expect(JSON.stringify(data)).not.toContain("db down");
   });
 
   it("returns 401 when ADMIN_SECRET env is not set", async () => {

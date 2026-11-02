@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { getAdminSecretFromRequest, validateAdminSecret } from "@/lib/admin-auth";
 import { mapLearner, mapProctor, mapTeacher } from "@/lib/admin/record-mappers";
+import { internalError, jsonError } from "@/lib/api/respond";
+import {
+  deleteLearnerRecord,
+  deleteProctorRecord,
+  deleteTeacherRecord,
+  updateLearnerRecord,
+  updateProctorRecord,
+  updateTeacherRecord,
+} from "@/lib/data/admin-entity";
 import { getPrisma } from "@/lib/prisma";
 import { isPhotoUploadError, isPhotoValidationError, uploadEntityPhoto } from "@/lib/storage";
-import { isLearnerSponsored } from "@/lib/sponsorship/availability";
 import { fromIstDateInput } from "@/lib/sponsorship/period";
 import {
   isAdminEditableEntity,
@@ -22,26 +30,17 @@ type ResolvedRoute =
 
 const resolveRoute = async (request: Request, context: RouteContext): Promise<ResolvedRoute> => {
   if (!validateAdminSecret(getAdminSecretFromRequest(request))) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: "Unauthorized: Invalid admin PIN" }, { status: 401 }),
-    };
+    return { ok: false, response: jsonError("Unauthorized: Invalid admin PIN", 401) };
   }
 
   const { entity, id } = await context.params;
 
   if (!isAdminEditableEntity(entity)) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: "Unsupported entity" }, { status: 404 }),
-    };
+    return { ok: false, response: jsonError("Unsupported entity", 404) };
   }
 
   if (!UUID_PATTERN.test(id)) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: "Invalid id" }, { status: 400 }),
-    };
+    return { ok: false, response: jsonError("Invalid id", 400) };
   }
 
   return { ok: true, entity, id };
@@ -60,7 +59,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const parsed = parseAdminEntityUpdateBody(entity, entityData);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+      return jsonError(parsed.error, parsed.status);
     }
 
     // An explicit image_url wins; a newly picked file is only uploaded when no URL was given.
@@ -76,7 +75,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         });
       } catch (error) {
         if (isPhotoUploadError(error) && isPhotoValidationError(error)) {
-          return NextResponse.json({ error: error.message }, { status: 400 });
+          return jsonError(error.message, 400);
         }
 
         photoUploadWarning = isPhotoUploadError(error)
@@ -86,37 +85,30 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const prisma = getPrisma();
+    const warning = photoUploadWarning ? { warning: photoUploadWarning } : {};
 
     if (parsed.entity === "learner") {
-      const existing = await prisma.learner.findUnique({ where: { id }, select: { id: true } });
-      if (!existing) {
-        return NextResponse.json({ error: "Learner not found" }, { status: 404 });
-      }
-
       const sponsorshipEndsAt = parsed.data.sponsorship_ends_at
         ? fromIstDateInput(parsed.data.sponsorship_ends_at)
         : null;
 
       if (parsed.data.sponsorship_ends_at && !sponsorshipEndsAt) {
-        return NextResponse.json({ error: "Invalid sponsorship end date" }, { status: 400 });
+        return jsonError("Invalid sponsorship end date", 400);
       }
 
-      const learner = await prisma.learner.update({
-        where: { id },
-        data: {
-          name: parsed.data.name,
-          phone: parsed.data.phone?.trim() || null,
-          standard: parsed.data.standard,
-          imageUrl,
-          sponsorshipEndsAt,
-        },
+      const learner = await updateLearnerRecord(prisma, id, {
+        name: parsed.data.name,
+        phone: parsed.data.phone?.trim() || null,
+        standard: parsed.data.standard,
+        imageUrl,
+        sponsorshipEndsAt,
       });
 
-      return NextResponse.json({
-        success: true,
-        record: mapLearner(learner),
-        ...(photoUploadWarning ? { warning: photoUploadWarning } : {}),
-      });
+      if (!learner) {
+        return jsonError("Learner not found", 404);
+      }
+
+      return NextResponse.json({ success: true, record: mapLearner(learner), ...warning });
     }
 
     const data = {
@@ -127,36 +119,24 @@ export async function PATCH(request: Request, context: RouteContext) {
     };
 
     if (parsed.entity === "teacher") {
-      const existing = await prisma.teacher.findUnique({ where: { id }, select: { id: true } });
-      if (!existing) {
-        return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
+      const teacher = await updateTeacherRecord(prisma, id, data);
+
+      if (!teacher) {
+        return jsonError("Teacher not found", 404);
       }
 
-      const teacher = await prisma.teacher.update({ where: { id }, data });
-
-      return NextResponse.json({
-        success: true,
-        record: mapTeacher(teacher),
-        ...(photoUploadWarning ? { warning: photoUploadWarning } : {}),
-      });
+      return NextResponse.json({ success: true, record: mapTeacher(teacher), ...warning });
     }
 
-    const existing = await prisma.proctor.findUnique({ where: { id }, select: { id: true } });
-    if (!existing) {
-      return NextResponse.json({ error: "Proctor not found" }, { status: 404 });
+    const proctor = await updateProctorRecord(prisma, id, data);
+
+    if (!proctor) {
+      return jsonError("Proctor not found", 404);
     }
 
-    const proctor = await prisma.proctor.update({ where: { id }, data });
-
-    return NextResponse.json({
-      success: true,
-      record: mapProctor(proctor),
-      ...(photoUploadWarning ? { warning: photoUploadWarning } : {}),
-    });
+    return NextResponse.json({ success: true, record: mapProctor(proctor), ...warning });
   } catch (error) {
-    console.error("Error updating admin entity:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return internalError(error, "Error updating admin entity");
   }
 }
 
@@ -171,47 +151,33 @@ export async function DELETE(request: Request, context: RouteContext) {
     const prisma = getPrisma();
 
     if (entity === "learner") {
-      const learner = await prisma.learner.findUnique({
-        where: { id },
-        select: { sponsorId: true, sponsorshipEndsAt: true },
-      });
+      const result = await deleteLearnerRecord(prisma, id);
 
-      if (!learner) {
-        return NextResponse.json({ error: "Learner not found" }, { status: 404 });
+      if (result === "not_found") {
+        return jsonError("Learner not found", 404);
       }
 
-      // Removing an actively sponsored learner would orphan a paid sponsorship.
-      if (isLearnerSponsored(learner)) {
-        return NextResponse.json(
-          { error: "This learner is sponsored and cannot be deleted." },
-          { status: 409 },
-        );
+      if (result === "sponsored") {
+        return jsonError("This learner is sponsored and cannot be deleted.", 409);
       }
 
-      await prisma.learner.delete({ where: { id } });
       return NextResponse.json({ success: true });
     }
 
     if (entity === "teacher") {
-      const teacher = await prisma.teacher.findUnique({ where: { id }, select: { id: true } });
-      if (!teacher) {
-        return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
+      if (!(await deleteTeacherRecord(prisma, id))) {
+        return jsonError("Teacher not found", 404);
       }
 
-      await prisma.teacher.delete({ where: { id } });
       return NextResponse.json({ success: true });
     }
 
-    const proctor = await prisma.proctor.findUnique({ where: { id }, select: { id: true } });
-    if (!proctor) {
-      return NextResponse.json({ error: "Proctor not found" }, { status: 404 });
+    if (!(await deleteProctorRecord(prisma, id))) {
+      return jsonError("Proctor not found", 404);
     }
 
-    await prisma.proctor.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting admin entity:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return internalError(error, "Error deleting admin entity");
   }
 }

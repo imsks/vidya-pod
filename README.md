@@ -1,6 +1,6 @@
 # Vidya Pod
 
-Next.js app for student/teacher/proctor registration, sponsorship payments (Cashfree), and a simple admin view. Database access uses **Prisma** (local Docker Postgres or Supabase Postgres in production). **Supabase** is optional for Auth and Storage — add your own cloud project creds when needed.
+Next.js app for student/teacher/proctor registration, sponsorship payments (Cashfree), and a simple admin view. The admin panel records expenses, which are summarized on the public `/transparency` page alongside successful online sponsorship totals and supporter acknowledgements (opt-in only). Database access uses **Prisma** (local Docker Postgres or Supabase Postgres in production). **Supabase** is optional for Auth and Storage — add your own cloud project creds when needed.
 
 ## Prerequisites
 

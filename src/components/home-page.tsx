@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { DONOR_WHATSAPP_COMMUNITY_URL } from "@/constants/community";
 import { PRICING, type PlanType } from "@/constants/pricing";
 
 function Reveal({
@@ -99,6 +100,9 @@ function Nav() {
           </a>
           <Link href="/sponsor" className="hover:text-foreground transition">
             Sponsor
+          </Link>
+          <Link href="/transparency" className="hover:text-foreground transition">
+            Transparency
           </Link>
         </nav>
         <Link
@@ -647,6 +651,70 @@ function SponsorCTA() {
   );
 }
 
+function Community() {
+  const perks = [
+    {
+      icon: "📸",
+      title: "Classroom Updates",
+      desc: "Photos, attendance and little wins from the pods - straight to your phone.",
+    },
+    {
+      icon: "🤝",
+      title: "Meet Fellow Donors",
+      desc: "Connect with people who believe every child deserves a teacher at home.",
+    },
+    {
+      icon: "📣",
+      title: "First to Know",
+      desc: "New pods, children who need a sponsor, and ways to help beyond giving.",
+    },
+  ];
+  return (
+    <section id="community" className="py-24 bg-muted/50">
+      <div className="max-w-5xl mx-auto px-6 text-center">
+        <Reveal>
+          <div className="inline-block text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            Community
+          </div>
+          <h2 className="mt-3 text-4xl md:text-5xl font-black">
+            Join the <span className="text-gradient">donor community.</span>
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+            Whether you&apos;ve sponsored a child or are just curious, our WhatsApp community is
+            open to everyone who wants to see the pods grow.
+          </p>
+        </Reveal>
+
+        <div className="mt-12 grid sm:grid-cols-3 gap-6 text-left">
+          {perks.map((perk, i) => (
+            <Reveal key={perk.title} delay={i * 100}>
+              <div className="h-full p-6 rounded-2xl bg-card border border-border hover:border-primary/40 shadow-soft transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl">
+                  {perk.icon}
+                </div>
+                <h3 className="mt-4 font-bold text-lg">{perk.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{perk.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal delay={300}>
+          <a
+            href={DONOR_WHATSAPP_COMMUNITY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group mt-12 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-7 py-4 font-semibold text-white shadow-soft transition-all hover:-translate-y-0.5 hover:bg-[#1ebe5b] hover:shadow-lift"
+          >
+            Join WhatsApp Community
+            <span className="transition-transform group-hover:translate-x-1">→</span>
+          </a>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 function FAQ() {
   const items = [
     {
@@ -859,6 +927,11 @@ function Footer() {
                 </a>
               </li>
               <li>
+                <a href="#community" className="hover:opacity-100 opacity-80">
+                  Community
+                </a>
+              </li>
+              <li>
                 <a href="#opensource" className="hover:opacity-100 opacity-80">
                   Open Source
                 </a>
@@ -926,6 +999,7 @@ export function HomePage() {
       <Showcase />
       <Tributes />
       <SponsorCTA />
+      <Community />
       <FAQ />
       <OpenSource />
       <Footer />

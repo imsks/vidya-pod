@@ -7,6 +7,12 @@ export const SponsorHeader = () => (
         <span className="inline-block w-8 h-8 rounded-xl bg-gradient-hero shadow-glow" />
         Vidya Pods
       </Link>
+      <Link
+        href="/transparency"
+        className="text-sm font-semibold text-muted-foreground transition hover:text-foreground"
+      >
+        Transparency
+      </Link>
     </div>
   </header>
 );

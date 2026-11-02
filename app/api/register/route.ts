@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import type { Proctor, Teacher } from "@/generated/prisma";
 import { getAdminSecretFromRequest, validateAdminSecret } from "@/lib/admin-auth";
+import { mapProctor, mapTeacher } from "@/lib/admin/record-mappers";
+import { internalError, jsonError } from "@/lib/api/respond";
+import { createProctor, createTeacher } from "@/lib/data/staff";
 import { getPrisma } from "@/lib/prisma";
 import { isPhotoUploadError, isPhotoValidationError, uploadEntityPhoto } from "@/lib/storage";
 import type { StorageEntityType } from "@/lib/storage/constants";
@@ -11,29 +13,11 @@ const roleToStorageEntity: Record<"teacher" | "proctor", StorageEntityType> = {
   proctor: "proctor",
 };
 
-const mapTeacher = (teacher: Teacher) => ({
-  id: teacher.id,
-  name: teacher.name,
-  phone: teacher.phone,
-  qualification: teacher.qualification,
-  image_url: teacher.imageUrl,
-  created_at: teacher.createdAt.toISOString(),
-});
-
-const mapProctor = (proctor: Proctor) => ({
-  id: proctor.id,
-  name: proctor.name,
-  phone: proctor.phone,
-  qualification: proctor.qualification,
-  image_url: proctor.imageUrl,
-  created_at: proctor.createdAt.toISOString(),
-});
-
 export async function POST(request: Request) {
   try {
     const adminSecret = getAdminSecretFromRequest(request);
     if (!validateAdminSecret(adminSecret)) {
-      return NextResponse.json({ error: "Unauthorized: Invalid admin PIN" }, { status: 401 });
+      return jsonError("Unauthorized: Invalid admin PIN", 401);
     }
 
     const body = await request.json();
@@ -41,7 +25,7 @@ export async function POST(request: Request) {
     const parsed = parseRegisterBody(registerData);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+      return jsonError(parsed.error, parsed.status);
     }
 
     const { role, name, phone, image_url, qualification } = parsed.data;
@@ -57,7 +41,7 @@ export async function POST(request: Request) {
         });
       } catch (error) {
         if (isPhotoUploadError(error) && isPhotoValidationError(error)) {
-          return NextResponse.json({ error: error.message }, { status: 400 });
+          return jsonError(error.message, 400);
         }
 
         if (isPhotoUploadError(error)) {
@@ -69,42 +53,18 @@ export async function POST(request: Request) {
     }
 
     const prisma = getPrisma();
+    const data = { name, phone, qualification, imageUrl: finalImageUrl };
     const entity =
       role === "teacher"
-        ? await prisma.teacher.create({
-            data: {
-              name,
-              phone,
-              qualification,
-              imageUrl: finalImageUrl,
-            },
-          })
-        : await prisma.proctor.create({
-            data: {
-              name,
-              phone,
-              qualification,
-              imageUrl: finalImageUrl,
-            },
-          });
+        ? mapTeacher(await createTeacher(prisma, data))
+        : mapProctor(await createProctor(prisma, data));
 
-    const response: {
-      success: boolean;
-      entity: ReturnType<typeof mapTeacher | typeof mapProctor>;
-      warning?: string;
-    } = {
+    return NextResponse.json({
       success: true,
-      entity: role === "teacher" ? mapTeacher(entity as Teacher) : mapProctor(entity as Proctor),
-    };
-
-    if (photoUploadWarning) {
-      response.warning = photoUploadWarning;
-    }
-
-    return NextResponse.json(response);
+      entity,
+      ...(photoUploadWarning ? { warning: photoUploadWarning } : {}),
+    });
   } catch (error) {
-    console.error("Error in register route:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return internalError(error, "Error in register route");
   }
 }

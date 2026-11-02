@@ -1,79 +1,55 @@
 import { NextResponse } from "next/server";
+import { internalError, jsonError } from "@/lib/api/respond";
 import { syncSponsorOrderFromCashfree } from "@/lib/cashfree/sync-sponsor-order";
+import { getSponsorOrdersForStatus } from "@/lib/data/sponsor-order";
 import { getPrisma } from "@/lib/prisma";
 
 type RouteContext = {
   params: Promise<{ orderId: string }>;
 };
 
-const orderSelect = {
-  orderId: true,
-  status: true,
-  plan: true,
-  amount: true,
-  learner: {
-    select: {
-      name: true,
-      standard: true,
-      sponsorshipEndsAt: true,
-    },
-  },
-  sponsor: {
-    select: {
-      name: true,
-      email: true,
-    },
-  },
-} as const;
-
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { orderId } = await context.params;
     const prisma = getPrisma();
 
-    let order = await prisma.sponsorOrder.findUnique({
-      where: { orderId },
-      select: orderSelect,
-    });
+    let orders = await getSponsorOrdersForStatus(prisma, orderId);
 
-    if (!order) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    if (orders.length === 0) {
+      return jsonError("Order not found", 404);
     }
 
-    if (order.status === "PENDING" || order.status === "EXPIRED") {
+    if (orders.some((order) => order.status === "PENDING" || order.status === "EXPIRED")) {
       await syncSponsorOrderFromCashfree(prisma, orderId);
-      order =
-        (await prisma.sponsorOrder.findUnique({
-          where: { orderId },
-          select: orderSelect,
-        })) ?? order;
+      orders = await getSponsorOrdersForStatus(prisma, orderId);
     }
+
+    const [order] = orders;
+    const isPaid = orders.some((row) => row.status === "SUCCESS");
 
     return NextResponse.json({
       success: true,
       data: {
-        order_id: order.orderId,
-        status: order.status,
+        order_id: orderId,
+        status: isPaid ? "SUCCESS" : order.status,
         plan: order.plan,
-        amount: order.amount,
-        learner: order.learner
-          ? {
-              name: order.learner.name,
-              standard: order.learner.standard,
-            }
-          : null,
-        sponsored_until: order.learner?.sponsorshipEndsAt?.toISOString() ?? null,
-        sponsor: order.sponsor
-          ? {
-              name: order.sponsor.name,
-              email: order.sponsor.email,
-            }
-          : null,
+        amount: orders.reduce((total, row) => total + row.amount, 0),
+        learners: orders.flatMap(({ learner }) =>
+          learner
+            ? [
+                {
+                  id: learner.id,
+                  name: learner.name,
+                  standard: learner.standard,
+                  sponsored_until: learner.sponsorshipEndsAt?.toISOString() ?? null,
+                },
+              ]
+            : [],
+        ),
+        sponsor: order.sponsor ? { name: order.sponsor.name } : null,
       },
     });
   } catch (error) {
-    console.error("Error fetching sponsor order:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return internalError(error, "Error fetching sponsor order");
   }
 }

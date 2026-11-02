@@ -1,4 +1,34 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+const mockAvailableLearners = (page: Page) =>
+  page.route("**/api/learner?*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        data: [
+          {
+            id: "550e8400-e29b-41d4-a716-446655440010",
+            name: "Asha Kumar",
+            standard: "8",
+            image_url: null,
+            is_sponsored: false,
+            created_at: "2024-01-01T00:00:00.000Z",
+          },
+        ],
+        counts: { all: 1, sponsored: 0, available: 1 },
+        pagination: {
+          page: 1,
+          limit: 12,
+          total_count: 1,
+          total_pages: 1,
+          has_next_page: false,
+          has_previous_page: false,
+        },
+      }),
+    });
+  });
 
 test.describe("Sponsor Flow", () => {
   test("sponsor page shows child selection heading", async ({ page }) => {
@@ -17,34 +47,7 @@ test.describe("Sponsor Flow", () => {
   });
 
   test("checkout page shows fund a pod heading when learner exists", async ({ page }) => {
-    await page.route("**/api/learner?*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          success: true,
-          data: [
-            {
-              id: "550e8400-e29b-41d4-a716-446655440010",
-              name: "Asha Kumar",
-              standard: "8",
-              image_url: null,
-              is_sponsored: false,
-              created_at: "2024-01-01T00:00:00.000Z",
-            },
-          ],
-          counts: { all: 1, sponsored: 0, available: 1 },
-          pagination: {
-            page: 1,
-            limit: 12,
-            total_count: 1,
-            total_pages: 1,
-            has_next_page: false,
-            has_previous_page: false,
-          },
-        }),
-      });
-    });
+    await mockAvailableLearners(page);
 
     await page.route("**/api/learner/550e8400-e29b-41d4-a716-446655440010", async (route) => {
       await route.fulfill({
@@ -70,6 +73,25 @@ test.describe("Sponsor Flow", () => {
     await expect(page.getByText("Asha Kumar")).toBeVisible();
   });
 
+  test("collects children in a cart and reviews them together", async ({ page }) => {
+    await mockAvailableLearners(page);
+
+    await page.goto("/sponsor");
+    await page.getByRole("button", { name: /add to cart/i }).click();
+    await expect(page.getByRole("region", { name: /sponsorship cart/i })).toContainText(
+      "1 child selected",
+    );
+
+    await page.getByRole("link", { name: /review cart/i }).click();
+    await expect(page).toHaveURL(/\/sponsor\/cart$/);
+    await expect(page.getByRole("list", { name: /children in your cart/i })).toContainText(
+      "Asha Kumar",
+    );
+
+    await page.getByRole("button", { name: /remove asha kumar/i }).click();
+    await expect(page.getByText(/your cart is empty/i)).toBeVisible();
+  });
+
   test("thank-you page loads with order id", async ({ page }) => {
     await page.route("**/api/sponsor/VP_test_order", async (route) => {
       await route.fulfill({
@@ -82,10 +104,15 @@ test.describe("Sponsor Flow", () => {
             status: "PENDING",
             plan: "monthly",
             amount: 400,
-            learner: {
-              name: "Asha Kumar",
-              standard: "8",
-            },
+            learners: [
+              {
+                id: "550e8400-e29b-41d4-a716-446655440010",
+                name: "Asha Kumar",
+                standard: "8",
+                sponsored_until: null,
+              },
+            ],
+            sponsor: null,
           },
         }),
       });
@@ -94,5 +121,48 @@ test.describe("Sponsor Flow", () => {
     await page.goto("/sponsor/thank-you?order_id=VP_test_order");
     await expect(page.getByRole("heading", { name: /processing payment/i })).toBeVisible();
     await expect(page.getByText("VP_test_order")).toBeVisible();
+    await expect(page.getByRole("link", { name: /join whatsapp community/i })).toHaveCount(0);
+  });
+
+  test("thank-you page lists every child of a paid cart and empties the cart", async ({ page }) => {
+    const learners = [
+      { id: "550e8400-e29b-41d4-a716-446655440010", name: "Asha Kumar", standard: "8" },
+      { id: "550e8400-e29b-41d4-a716-446655440011", name: "Ravi Sharma", standard: "6" },
+    ];
+    await page.addInitScript(
+      (cart) => {
+        window.localStorage.setItem("vidyapod:sponsor-cart", JSON.stringify(cart));
+      },
+      learners.map((learner) => ({ ...learner, image_url: null })),
+    );
+    await page.route("**/api/sponsor/VP_cart_order", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            order_id: "VP_cart_order",
+            status: "SUCCESS",
+            plan: "monthly",
+            amount: 600,
+            learners: learners.map((learner) => ({ ...learner, sponsored_until: null })),
+            sponsor: { name: "Priya" },
+          },
+        }),
+      });
+    });
+
+    await page.goto("/sponsor/thank-you?order_id=VP_cart_order");
+    await expect(page.getByRole("heading", { name: /thank you/i })).toBeVisible();
+    await expect(page.getByRole("listitem").filter({ hasText: "Asha Kumar" })).toBeVisible();
+    await expect(page.getByRole("listitem").filter({ hasText: "Ravi Sharma" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /join whatsapp community/i })).toHaveAttribute(
+      "href",
+      /^https:\/\/chat\.whatsapp\.com\//,
+    );
+    await expect
+      .poll(() => page.evaluate(() => window.localStorage.getItem("vidyapod:sponsor-cart")))
+      .toBe("[]");
   });
 });

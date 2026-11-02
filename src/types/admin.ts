@@ -1,3 +1,5 @@
+import type { ExpenseCategory } from "@/constants/expenses";
+
 export interface TeacherRecord {
   id?: string;
   name: string;
@@ -54,10 +56,20 @@ export interface SponsorOrderRecord {
   created_at?: string;
 }
 
+export interface ExpenseRecord {
+  id: string;
+  category: ExpenseCategory;
+  amount: number;
+  description: string;
+  incurred_at: string;
+  created_at: string;
+}
+
 export interface AdminDashboardData {
   teachers: TeacherRecord[];
   learners: LearnerRecord[];
   proctors: ProctorRecord[];
   sponsors: SponsorRecord[];
   sponsor_orders: SponsorOrderRecord[];
+  expenses: ExpenseRecord[];
 }
