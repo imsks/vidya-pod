@@ -70,41 +70,53 @@ export const SponsorCartPage = () => {
           </div>
         ) : (
           <>
-            <ul className="mt-10 space-y-3" aria-label="Children in your list">
+            <ul className="mt-10 space-y-4" aria-label="Children in your list">
               {cart.items.map((item) => (
                 <li
                   key={item.id}
-                  className={`flex items-center gap-4 p-4 rounded-2xl border bg-card ${
+                  className={`flex overflow-hidden rounded-3xl border bg-card shadow-soft ${
                     unavailable[item.id]
                       ? "border-destructive/40 bg-destructive/5"
-                      : "border-border"
+                      : "border-primary/20"
                   }`}
                 >
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-warm shrink-0">
+                  <div className="relative min-h-32 w-24 shrink-0 bg-gradient-warm sm:min-h-44 sm:w-32">
                     {item.image_url ? (
-                      <Image src={item.image_url} alt={item.name} fill className="object-cover" />
+                      <Image
+                        src={item.image_url}
+                        alt={item.name}
+                        fill
+                        sizes="(min-width: 640px) 128px, 96px"
+                        className="object-cover object-top"
+                      />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl">
+                      <div className="flex h-full w-full items-center justify-center text-5xl">
                         🧒
                       </div>
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold truncate">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">Grade {item.standard}</p>
-                    {unavailable[item.id] && (
-                      <p className="mt-1 text-sm font-semibold text-destructive">
-                        ⚠ {unavailable[item.id]}
+                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                    <div className="min-w-0">
+                      <p className="truncate font-display text-xl font-black sm:text-2xl">
+                        {item.name}
                       </p>
-                    )}
+                      <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+                        Grade {item.standard}
+                      </span>
+                      {unavailable[item.id] && (
+                        <p className="mt-2 text-sm font-semibold text-destructive">
+                          ⚠ {unavailable[item.id]}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => cart.remove([item.id])}
+                      className="w-fit shrink-0 rounded-full border border-border px-4 py-2 text-sm font-semibold transition-all hover:border-destructive hover:text-destructive"
+                    >
+                      Remove<span className="sr-only"> {item.name}</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => cart.remove([item.id])}
-                    className="shrink-0 rounded-full border border-border px-4 py-2 text-sm font-semibold transition-all hover:border-destructive hover:text-destructive"
-                  >
-                    Remove<span className="sr-only"> {item.name}</span>
-                  </button>
                 </li>
               ))}
             </ul>

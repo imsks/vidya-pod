@@ -110,18 +110,29 @@ export const SponsorCheckoutPage = ({ learnerId }: SponsorCheckoutPageProps) => 
           </p>
         </div>
 
-        <div className="mt-10 p-6 rounded-3xl bg-card border border-primary/20 shadow-soft flex items-center gap-5">
-          <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gradient-warm shrink-0">
+        <div className="mt-10 overflow-hidden rounded-3xl border border-primary/20 bg-card shadow-soft sm:flex">
+          <div className="relative aspect-[4/3] w-full shrink-0 bg-gradient-warm sm:aspect-[3/4] sm:w-56">
             {learner.image_url ? (
-              <Image src={learner.image_url} alt={learner.name} fill className="object-cover" />
+              <Image
+                src={learner.image_url}
+                alt={learner.name}
+                fill
+                sizes="(min-width: 640px) 224px, 100vw"
+                className="object-cover object-top"
+              />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl">🧒</div>
+              <div className="flex h-full w-full items-center justify-center text-7xl">🧒</div>
             )}
           </div>
-          <div>
+          <div className="flex flex-col justify-center p-6 sm:p-8">
             <p className="text-sm text-muted-foreground">You&apos;re sponsoring</p>
-            <p className="text-xl font-bold">{learner.name}</p>
-            <p className="text-sm text-primary font-semibold">Grade {learner.standard}</p>
+            <p className="mt-1 font-display text-3xl font-black sm:text-4xl">{learner.name}</p>
+            <span className="mt-3 w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+              Grade {learner.standard}
+            </span>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Your support covers their teacher, books and stationery.
+            </p>
           </div>
         </div>
 
