@@ -35,12 +35,13 @@ make migrate
 npm run dev
 ```
 
-| Variable                               | Where to get it                                                                                            |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                         | `.env.example` (local Docker) or Supabase Dashboard (prod)                                                 |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Optional — Supabase Dashboard → Project Settings → API                                                     |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Optional — same page → publishable / anon key                                                              |
-| `SUPABASE_SECRET_KEY`                  | Optional — Settings → API Keys → **Secret key** (`sb_secret_...`, server-only; required for photo uploads) |
+| Variable                               | Where to get it                                                                                                   |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                         | `.env.example` (local Docker) or Supabase Dashboard (prod) — prod must use the **Transaction pooler** (port 6543) |
+| `DIRECT_URL`                           | Prod only — Supabase **Session pooler** (5432) or direct host, used by `prisma migrate`                           |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Optional — Supabase Dashboard → Project Settings → API                                                            |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Optional — same page → publishable / anon key                                                                     |
+| `SUPABASE_SECRET_KEY`                  | Optional — Settings → API Keys → **Secret key** (`sb_secret_...`, server-only; required for photo uploads)        |
 
 **Photo uploads:** With `SUPABASE_SECRET_KEY` set, the app auto-creates a public `photos` bucket on first upload. You can also run `supabase-storage.sql` in the Supabase SQL Editor to create the bucket and public read policy manually.
 | `CASHFREE_*` | Cashfree merchant dashboard (sandbox for local) |

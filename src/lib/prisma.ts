@@ -9,11 +9,16 @@ const globalForPrisma = globalThis as unknown as {
   pgPool: Pool | undefined;
 };
 
+const DEFAULT_POOL_MAX = 3;
+
 const createPrismaClient = (): PrismaClient => {
   const pool =
     globalForPrisma.pgPool ??
     new Pool({
       connectionString: process.env.DATABASE_URL,
+      // Every serverless instance owns a pool; keep it small so they can't exhaust Supavisor.
+      max: Number(process.env.DATABASE_POOL_MAX) || DEFAULT_POOL_MAX,
+      idleTimeoutMillis: 10_000,
     });
 
   if (process.env.NODE_ENV !== "production") {
